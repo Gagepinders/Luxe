@@ -141,7 +141,7 @@ export default async function Dashboard() {
         <StatTile icon={Users} label="Customers" value={String(customerCount)} />
       </div>
 
-      <WeatherWidget lat={company.lat} lng={company.lng} />
+      <WeatherWidget />
 
       <div className="grid lg:grid-cols-3 gap-6">
         <section className="card p-5 lg:col-span-2">

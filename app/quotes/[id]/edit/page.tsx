@@ -16,7 +16,16 @@ export default async function EditQuotePage({
     prisma.quote.findUnique({ where: { id }, include: { lineItems: true } }),
     prisma.customer.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.property.findMany({
-      select: { id: true, customerId: true, label: true, addressLine: true },
+      select: {
+        id: true,
+        customerId: true,
+        label: true,
+        addressLine: true,
+        lawnSqft: true,
+        driveSqft: true,
+        walkwaySqft: true,
+        mulchSqft: true,
+      },
     }),
     prisma.serviceType.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);

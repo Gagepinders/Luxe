@@ -16,6 +16,10 @@ import {
   MoreHorizontal,
   UserCog,
   LogOut,
+  CloudSnow,
+  Calculator,
+  BarChart3,
+  Boxes,
   X,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
@@ -30,8 +34,12 @@ const PRIMARY = [
 const MORE = [
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/properties", label: "Properties", icon: MapPinned },
+  { href: "/estimator", label: "Estimator", icon: Calculator },
   { href: "/quotes", label: "Quotes", icon: FileText },
   { href: "/invoices", label: "Invoices", icon: Receipt },
+  { href: "/weather", label: "Weather", icon: CloudSnow },
+  { href: "/inventory", label: "Materials & Equip.", icon: Boxes },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/campaigns", label: "Campaigns", icon: Mail },
   { href: "/team", label: "Team", icon: UserCog },
 ];
@@ -47,7 +55,7 @@ export default function MobileNav() {
       {open && (
         <div className="md:hidden fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)}>
           <div
-            className="absolute bottom-16 inset-x-3 rounded-xl bg-forest-950 p-2 shadow-lg"
+            className="absolute bottom-16 inset-x-3 max-h-[75vh] overflow-y-auto rounded-xl bg-forest-950 p-2 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-2 py-1.5">

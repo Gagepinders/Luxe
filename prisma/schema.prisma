@@ -253,6 +253,29 @@ model User {
   createdAt    DateTime @default(now())
 }
 
+model MaterialStock {
+  id         String   @id @default(cuid())
+  name       String // e.g. "Mulch", "Rock salt", "Ice melt"
+  unit       String   @default("unit") // yards, bags, gallons, tons
+  quantity   Float    @default(0)
+  lowStockAt Float    @default(0) // flag as low stock at or below this level
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Equipment {
+  id             String    @id @default(cuid())
+  name           String // "Toro Z Master", "F-250 Plow Truck"
+  category       String    @default("equipment") // vehicle | mower | plow | trimmer | other
+  status         String    @default("active") // active | maintenance | retired
+  lastServicedAt DateTime?
+  nextServiceDue DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
 model CompanyProfile {
   id          String @id @default("default")
   name        String @default("Luxe Landscape & Snow")

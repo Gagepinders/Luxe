@@ -15,6 +15,10 @@ import {
   Leaf,
   UserCog,
   LogOut,
+  CloudSnow,
+  Calculator,
+  BarChart3,
+  Boxes,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 
@@ -23,10 +27,14 @@ const NAV = [
   { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/properties", label: "Properties", icon: MapPinned },
+  { href: "/estimator", label: "Estimator", icon: Calculator },
   { href: "/quotes", label: "Quotes", icon: FileText },
   { href: "/jobs", label: "Jobs", icon: CalendarClock },
   { href: "/invoices", label: "Invoices", icon: Receipt },
   { href: "/routes", label: "Routes", icon: Route },
+  { href: "/weather", label: "Weather", icon: CloudSnow },
+  { href: "/inventory", label: "Materials & Equip.", icon: Boxes },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/campaigns", label: "Campaigns", icon: Mail },
   { href: "/team", label: "Team", icon: UserCog },
 ];

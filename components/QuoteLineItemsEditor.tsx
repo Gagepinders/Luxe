@@ -21,16 +21,32 @@ export type ServiceTypeOption = {
   defaultRate: number;
 };
 
+export type PropertyMeasurements = {
+  lawnSqft: number | null;
+  driveSqft: number | null;
+  walkwaySqft: number | null;
+  mulchSqft: number | null;
+};
+
 function randKey() {
   return Math.random().toString(36).slice(2);
 }
 
+const MEASUREMENT_FIELDS: { key: keyof PropertyMeasurements; label: string }[] = [
+  { key: "lawnSqft", label: "Lawn" },
+  { key: "driveSqft", label: "Driveway" },
+  { key: "walkwaySqft", label: "Walkway" },
+  { key: "mulchSqft", label: "Mulch beds" },
+];
+
 export default function QuoteLineItemsEditor({
   initialItems,
   serviceTypes,
+  property,
 }: {
   initialItems: LineItemRow[];
   serviceTypes: ServiceTypeOption[];
+  property?: PropertyMeasurements | null;
 }) {
   const [rows, setRows] = useState<LineItemRow[]>(
     initialItems.length > 0
@@ -54,6 +70,17 @@ export default function QuoteLineItemsEditor({
     setRows((rs) => rs.filter((r) => r.key !== key));
   }
 
+  function addRowFromMeasurement(label: string, sqft: number) {
+    setRows((rs) => [
+      ...rs,
+      { key: randKey(), description: label, quantity: sqft, unit: "sqft", unitPrice: 0, serviceTypeId: null },
+    ]);
+  }
+
+  const measurementOptions = property
+    ? MEASUREMENT_FIELDS.filter((f) => (property[f.key] ?? 0) > 0)
+    : [];
+
   function applyServiceType(key: string, serviceTypeId: string) {
     const st = serviceTypes.find((s) => s.id === serviceTypeId);
     if (!st) {
@@ -73,6 +100,29 @@ export default function QuoteLineItemsEditor({
   return (
     <div className="space-y-3">
       <input type="hidden" name="lineItemsPayload" value={payload} readOnly />
+
+      {measurementOptions.length > 0 && (
+        <div className="rounded-lg border border-dashed border-border-subtle p-2.5">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-forest-950/45 mb-1.5">
+            Add from measured property
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {measurementOptions.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => addRowFromMeasurement(f.label, property![f.key]!)}
+                className="rounded-full border border-forest-700/30 bg-forest-700/5 px-3 py-1 text-xs font-medium text-forest-700 hover:bg-forest-700/10"
+              >
+                + {f.label}: {Math.round(property![f.key]!).toLocaleString()} sq ft
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[11px] text-forest-950/40">
+            Adds a line pre-filled with the measured square footage — then pick a service to apply its rate.
+          </p>
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

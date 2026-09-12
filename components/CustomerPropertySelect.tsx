@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { inputClass, Field } from "@/components/ui";
 
 type Customer = { id: string; name: string };
@@ -9,17 +8,20 @@ type Property = { id: string; customerId: string; label: string; addressLine: st
 export default function CustomerPropertySelect({
   customers,
   properties,
-  defaultCustomerId,
-  defaultPropertyId,
+  customerId,
+  propertyId,
+  onCustomerChange,
+  onPropertyChange,
   lockCustomer = false,
 }: {
   customers: Customer[];
   properties: Property[];
-  defaultCustomerId?: string;
-  defaultPropertyId?: string;
+  customerId: string;
+  propertyId: string;
+  onCustomerChange: (id: string) => void;
+  onPropertyChange: (id: string) => void;
   lockCustomer?: boolean;
 }) {
-  const [customerId, setCustomerId] = useState(defaultCustomerId ?? "");
   const filtered = properties.filter((p) => p.customerId === customerId);
 
   return (
@@ -31,7 +33,7 @@ export default function CustomerPropertySelect({
           required={!lockCustomer}
           disabled={lockCustomer}
           value={customerId}
-          onChange={(e) => setCustomerId(e.target.value)}
+          onChange={(e) => onCustomerChange(e.target.value)}
           className={inputClass}
         >
           <option value="" disabled>
@@ -47,7 +49,8 @@ export default function CustomerPropertySelect({
       <Field label="Property (optional)">
         <select
           name="propertyId"
-          defaultValue={defaultPropertyId ?? ""}
+          value={propertyId}
+          onChange={(e) => onPropertyChange(e.target.value)}
           className={inputClass}
           disabled={!customerId}
         >

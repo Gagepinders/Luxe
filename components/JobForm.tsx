@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Field, inputClass, Button } from "@/components/ui";
 import CustomerPropertySelect from "@/components/CustomerPropertySelect";
 
@@ -36,14 +39,21 @@ export default function JobForm({
   };
 }) {
   const dateStr = new Date(job?.scheduledDate ?? new Date()).toISOString().slice(0, 10);
+  const [customerId, setCustomerId] = useState(job?.customerId ?? defaultCustomerId ?? "");
+  const [propertyId, setPropertyId] = useState(job?.propertyId ?? defaultPropertyId ?? "");
 
   return (
     <form action={action} className="card p-5 space-y-4 max-w-3xl">
       <CustomerPropertySelect
         customers={customers}
         properties={properties}
-        defaultCustomerId={job?.customerId ?? defaultCustomerId}
-        defaultPropertyId={job?.propertyId ?? defaultPropertyId}
+        customerId={customerId}
+        propertyId={propertyId}
+        onCustomerChange={(id) => {
+          setCustomerId(id);
+          setPropertyId("");
+        }}
+        onPropertyChange={setPropertyId}
         lockCustomer={Boolean(job)}
       />
 

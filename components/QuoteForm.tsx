@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Field, inputClass, Button } from "@/components/ui";
 import CustomerPropertySelect from "@/components/CustomerPropertySelect";
 import QuoteLineItemsEditor, {
@@ -6,7 +9,16 @@ import QuoteLineItemsEditor, {
 } from "@/components/QuoteLineItemsEditor";
 
 type Customer = { id: string; name: string };
-type Property = { id: string; customerId: string; label: string; addressLine: string };
+type Property = {
+  id: string;
+  customerId: string;
+  label: string;
+  addressLine: string;
+  lawnSqft: number | null;
+  driveSqft: number | null;
+  walkwaySqft: number | null;
+  mulchSqft: number | null;
+};
 
 export default function QuoteForm({
   action,
@@ -49,6 +61,10 @@ export default function QuoteForm({
     serviceTypeId: li.serviceTypeId,
   }));
 
+  const [customerId, setCustomerId] = useState(quote?.customerId ?? defaultCustomerId ?? "");
+  const [propertyId, setPropertyId] = useState(quote?.propertyId ?? defaultPropertyId ?? "");
+  const selectedProperty = properties.find((p) => p.id === propertyId) ?? null;
+
   const validUntilStr = quote?.validUntil
     ? new Date(quote.validUntil).toISOString().slice(0, 10)
     : "";
@@ -58,8 +74,13 @@ export default function QuoteForm({
       <CustomerPropertySelect
         customers={customers}
         properties={properties}
-        defaultCustomerId={quote?.customerId ?? defaultCustomerId}
-        defaultPropertyId={quote?.propertyId ?? defaultPropertyId}
+        customerId={customerId}
+        propertyId={propertyId}
+        onCustomerChange={(id) => {
+          setCustomerId(id);
+          setPropertyId("");
+        }}
+        onPropertyChange={setPropertyId}
         lockCustomer={Boolean(quote)}
       />
 
@@ -83,7 +104,11 @@ export default function QuoteForm({
       </div>
 
       <Field label="Line items">
-        <QuoteLineItemsEditor initialItems={initialItems} serviceTypes={serviceTypes} />
+        <QuoteLineItemsEditor
+          initialItems={initialItems}
+          serviceTypes={serviceTypes}
+          property={selectedProperty}
+        />
       </Field>
 
       <Field label="Notes">
