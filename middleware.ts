@@ -6,16 +6,22 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 // ?key= check rather than via login (maintenance endpoints, and the public
 // lead-capture webhook called by the website's own contact form), the
 // Square payment webhook (authenticates itself via an HMAC signature, not a
-// login), and the customer-facing quote/invoice links (gated by an
-// unguessable token in the URL itself, not a login).
+// login), the customer-facing quote/invoice links (gated by an unguessable
+// token in the URL itself, not a login), the public instant-quote funnel
+// (its own standalone marketing page — no CRM data is exposed, and its
+// server actions only ever create new records, never read existing ones),
+// and the geocoding proxy that funnel needs to place a visitor's address on
+// the map.
 const PUBLIC_PATHS = [
   "/login",
   "/api/seed",
   "/api/setup-admin",
   "/api/leads",
   "/api/webhooks/square",
+  "/api/geocode",
   "/q",
   "/i",
+  "/quote",
 ];
 
 export async function middleware(req: NextRequest) {
