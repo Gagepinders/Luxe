@@ -4,6 +4,7 @@ import { getCompanyProfile } from "@/lib/companyProfile";
 import { PageHeader, StatusBadge, Button } from "@/components/ui";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import WeatherWidget from "@/components/WeatherWidget";
+import { getPendingFollowUps } from "@/lib/callLogs";
 import { startOfMonth, endOfMonth, startOfDay, endOfDay, addDays } from "date-fns";
 import {
   Plus,
@@ -16,6 +17,7 @@ import {
   AlertTriangle,
   Repeat,
   Users,
+  PhoneCall,
   type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +45,7 @@ export default async function Dashboard() {
     customerCount,
     invoicesAll,
     company,
+    pendingFollowUps,
   ] = await Promise.all([
     prisma.quote.findMany({ include: { lineItems: true } }),
     prisma.job.findMany({
@@ -67,7 +70,10 @@ export default async function Dashboard() {
     prisma.customer.count(),
     prisma.invoice.findMany({ include: { lineItems: true } }),
     getCompanyProfile(),
+    getPendingFollowUps(),
   ]);
+
+  const followUpsDue = pendingFollowUps.filter((f) => f.followUpAt <= now).length;
 
   const total = (q: { lineItems: { quantity: number; unitPrice: number }[] }) =>
     q.lineItems.reduce((s, li) => s + li.quantity * li.unitPrice, 0);
@@ -139,6 +145,13 @@ export default async function Dashboard() {
         />
         <StatTile icon={Repeat} label="Recurring rev. (mo. est.)" value={formatCurrency(recurringMonthlyValue)} />
         <StatTile icon={Users} label="Customers" value={String(customerCount)} />
+        <StatTile
+          icon={PhoneCall}
+          label="Follow-ups due"
+          value={String(followUpsDue)}
+          tone={followUpsDue > 0 ? "warning" : undefined}
+          href="/calls"
+        />
       </div>
 
       <WeatherWidget />
@@ -242,14 +255,16 @@ function StatTile({
   label,
   value,
   tone,
+  href,
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
   tone?: "warning";
+  href?: string;
 }) {
-  return (
-    <div className="card p-4">
+  const content = (
+    <>
       <div className="flex items-center gap-2 mb-1">
         <span
           className={`flex h-6 w-6 items-center justify-center rounded-md ${
@@ -263,6 +278,13 @@ function StatTile({
       <p className={`text-xl font-semibold ${tone === "warning" ? "text-warning" : "text-forest-950"}`}>
         {value}
       </p>
-    </div>
+    </>
+  );
+  return href ? (
+    <Link href={href} className="card p-4 block hover:shadow-md transition-shadow">
+      {content}
+    </Link>
+  ) : (
+    <div className="card p-4">{content}</div>
   );
 }

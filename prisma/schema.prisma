@@ -37,6 +37,7 @@ model Customer {
   jobs       Job[]
   invoices   Invoice[]
   activities Activity[]
+  callLogs   CallLog[]
 
   @@index([name])
   @@index([pipelineStage])
@@ -239,6 +240,21 @@ model EmailCampaign {
   sentAt         DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+}
+
+model CallLog {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  direction  String    @default("outbound") // outbound | inbound
+  outcome    String    @default("connected") // connected | voicemail | no_answer | busy | wrong_number
+  notes      String?
+  followUpAt DateTime? // next time to follow up with this customer, if any
+  createdAt  DateTime  @default(now())
+
+  @@index([customerId])
+  @@index([followUpAt])
 }
 
 model Activity {

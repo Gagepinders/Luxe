@@ -52,9 +52,13 @@ function Card({
         </p>
       )}
       {customer.phone && (
-        <p className="flex items-center gap-1 text-xs text-forest-950/60">
+        <a
+          href={`tel:${customer.phone.replace(/[^\d+]/g, "")}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1 text-xs text-forest-950/60 hover:text-forest-700 hover:underline"
+        >
           <Phone size={11} /> {customer.phone}
-        </p>
+        </a>
       )}
       {customer.email && (
         <p className="flex items-center gap-1 text-xs text-forest-950/60 truncate">

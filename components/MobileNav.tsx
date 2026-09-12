@@ -13,6 +13,7 @@ import {
   Receipt,
   Route,
   Mail,
+  PhoneCall,
   MoreHorizontal,
   UserCog,
   LogOut,
@@ -36,6 +37,7 @@ const PRIMARY = [
 
 const MORE = [
   { href: "/customers", label: "Customers", icon: Users },
+  { href: "/calls", label: "Calls", icon: PhoneCall },
   { href: "/properties", label: "Properties", icon: MapPinned },
   { href: "/map", label: "Map", icon: Map },
   { href: "/estimator", label: "Estimator", icon: Calculator },

@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader, Button, StatusBadge } from "@/components/ui";
 import { formatCurrency, formatDate, formatDateShort } from "@/lib/format";
 import { addCustomerNote, deleteCustomer } from "@/app/actions/customers";
-import { Plus, Mail, Phone, Building2, Pencil, Trash2, MapPin } from "lucide-react";
+import { logCall, clearFollowUp } from "@/app/actions/calls";
+import { CALL_OUTCOME_LABELS } from "@/lib/callLogs";
+import { Plus, Mail, Phone, Building2, Pencil, Trash2, MapPin, PhoneCall } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +23,19 @@ export default async function CustomerDetailPage({
       quotes: { include: { lineItems: true }, orderBy: { createdAt: "desc" } },
       jobs: { orderBy: { scheduledDate: "desc" } },
       activities: { orderBy: { createdAt: "desc" } },
+      callLogs: { orderBy: { createdAt: "desc" } },
     },
   });
 
   if (!customer) notFound();
+
+  const pendingFollowUp = customer.callLogs[0]?.followUpAt ?? null;
+  const pendingFollowUpCallId = customer.callLogs[0]?.id;
+  const telHref = customer.phone ? `tel:${customer.phone.replace(/[^\d+]/g, "")}` : null;
+  const logCallAction = logCall.bind(null, id);
+  const clearFollowUpAction = pendingFollowUpCallId
+    ? clearFollowUp.bind(null, pendingFollowUpCallId, id)
+    : undefined;
 
   const quoteTotal = (q: (typeof customer.quotes)[number]) =>
     q.lineItems.reduce((sum, li) => sum + li.quantity * li.unitPrice, 0);
@@ -166,9 +177,12 @@ export default async function CustomerDetailPage({
               </p>
             )}
             {customer.phone && (
-              <p className="flex items-center gap-2 text-forest-950/80">
+              <a
+                href={telHref!}
+                className="flex items-center gap-2 text-forest-950/80 hover:text-forest-700 hover:underline"
+              >
                 <Phone size={14} /> {customer.phone}
-              </p>
+              </a>
             )}
             {customer.email && (
               <p className="flex items-center gap-2 text-forest-950/80">
@@ -201,6 +215,92 @@ export default async function CustomerDetailPage({
               <p className="pt-2 border-t border-border-subtle text-forest-950/70 whitespace-pre-wrap">
                 {customer.notes}
               </p>
+            )}
+          </section>
+
+          <section className="card p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-forest-950 text-sm">Call</h2>
+              {telHref ? (
+                <a
+                  href={telHref}
+                  className="flex items-center gap-1.5 rounded-lg bg-forest-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-forest-800"
+                >
+                  <PhoneCall size={13} /> Call {customer.phone}
+                </a>
+              ) : (
+                <span className="text-xs text-forest-950/40">No phone on file</span>
+              )}
+            </div>
+
+            {pendingFollowUp && (
+              <div className="flex items-center justify-between rounded-lg bg-gold-100 px-3 py-2 text-xs text-gold-700">
+                <span>Follow up {formatDate(pendingFollowUp)}</span>
+                {clearFollowUpAction && (
+                  <form action={clearFollowUpAction}>
+                    <button type="submit" className="underline hover:no-underline">
+                      Clear
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
+
+            <form action={logCallAction} className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  name="direction"
+                  defaultValue="outbound"
+                  className="rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-xs"
+                >
+                  <option value="outbound">Outbound</option>
+                  <option value="inbound">Inbound</option>
+                </select>
+                <select
+                  name="outcome"
+                  defaultValue="connected"
+                  className="rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-xs"
+                >
+                  {Object.entries(CALL_OUTCOME_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <textarea
+                name="notes"
+                placeholder="What was discussed…"
+                rows={2}
+                className="w-full rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-xs resize-none"
+              />
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  name="followUpAt"
+                  className="flex-1 rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-xs"
+                />
+                <Button type="submit" size="sm">
+                  Log call
+                </Button>
+              </div>
+            </form>
+
+            {customer.callLogs.length > 0 && (
+              <ul className="space-y-2 pt-2 border-t border-border-subtle">
+                {customer.callLogs.slice(0, 5).map((c) => (
+                  <li key={c.id} className="text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <StatusBadge status={c.outcome} />
+                      <span className="text-forest-950/40">
+                        {c.direction === "inbound" ? "inbound" : "outbound"} ·{" "}
+                        {formatDate(c.createdAt)}
+                      </span>
+                    </div>
+                    {c.notes && <p className="text-forest-950/70 mt-0.5">{c.notes}</p>}
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
 

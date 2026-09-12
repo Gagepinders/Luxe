@@ -129,7 +129,16 @@ export default async function CustomersPage({
                       </Link>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell text-forest-950/70">
-                      {c.phone || c.email || "—"}
+                      {c.phone ? (
+                        <a
+                          href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}
+                          className="hover:text-forest-700 hover:underline"
+                        >
+                          {c.phone}
+                        </a>
+                      ) : (
+                        c.email || "—"
+                      )}
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-forest-950/70">
                       {c.properties.length}

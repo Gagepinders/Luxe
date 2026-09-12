@@ -89,6 +89,11 @@ const STATUS_STYLES: Record<string, string> = {
   overdue: "bg-danger-100 text-danger",
   sending: "bg-warning-100 text-warning",
   failed: "bg-danger-100 text-danger",
+  connected: "bg-success-100 text-success",
+  voicemail: "bg-gold-100 text-gold-600",
+  no_answer: "bg-surface-muted text-forest-950/60",
+  busy: "bg-surface-muted text-forest-950/60",
+  wrong_number: "bg-danger-100 text-danger",
 };
 
 export function StatusBadge({ status }: { status: string }) {
