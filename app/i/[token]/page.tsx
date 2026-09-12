@@ -109,6 +109,13 @@ export default async function PublicInvoicePage({
             <CheckCircle2 size={16} /> Paid in full{invoice.paidAt ? ` on ${formatDate(invoice.paidAt)}` : ""}.
             Thank you!
           </div>
+        ) : invoice.squarePublicUrl ? (
+          <a
+            href={invoice.squarePublicUrl}
+            className="flex items-center justify-center gap-2 rounded-lg bg-[#006aff] px-4 py-3 text-sm font-semibold text-white hover:opacity-90"
+          >
+            Pay now with Square
+          </a>
         ) : (
           <div className="rounded-lg bg-surface-muted px-4 py-3 text-sm text-forest-950/70">
             To pay, call {company.phone} or reply to the email that sent this link.

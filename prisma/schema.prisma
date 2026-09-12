@@ -28,6 +28,7 @@ model Customer {
   source      String? // how they heard about us: referral, google, website, etc.
   tags        String? // comma separated
   notes       String?
+  squareCustomerId String? // cached Square Customer id, once synced for invoicing
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -201,6 +202,10 @@ model Invoice {
   paidAt      DateTime?
   notes       String?
   publicToken String?   @unique // lets the customer view the invoice online, no login
+
+  squareInvoiceId  String? @unique // Square Invoices API id, once created
+  squareOrderId    String?
+  squarePublicUrl  String? // Square-hosted payment page for this invoice
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

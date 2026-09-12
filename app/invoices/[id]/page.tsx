@@ -4,10 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { getCompanyProfile } from "@/lib/companyProfile";
 import { PageHeader, Button, StatusBadge } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { setInvoiceStatus, deleteInvoice, sendInvoiceToCustomer } from "@/app/actions/invoices";
+import {
+  setInvoiceStatus,
+  deleteInvoice,
+  sendInvoiceToCustomer,
+  setUpSquarePayment,
+} from "@/app/actions/invoices";
 import { getAppUrl } from "@/lib/appUrl";
+import { isSquareConfigured } from "@/lib/square";
 import PrintButton from "@/components/PrintButton";
-import { Pencil, Trash2, Send, CheckCircle2, Link2 } from "lucide-react";
+import { Pencil, Trash2, Send, CheckCircle2, Link2, CreditCard } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -38,8 +44,10 @@ export default async function InvoiceDetailPage({
   const markPaid = setInvoiceStatus.bind(null, id, "paid");
   const markDraft = setInvoiceStatus.bind(null, id, "draft");
   const sendToCustomer = sendInvoiceToCustomer.bind(null, id);
+  const setUpSquare = setUpSquarePayment.bind(null, id);
   const publicLink = invoice.publicToken ? `${getAppUrl()}/i/${invoice.publicToken}` : null;
   const remove = deleteInvoice.bind(null, id);
+  const squareReady = isSquareConfigured();
 
   return (
     <main className="p-6 md:p-8 space-y-6">
@@ -189,6 +197,28 @@ export default async function InvoiceDetailPage({
               >
                 <Link2 size={12} /> View customer-facing link
               </a>
+            )}
+            {invoice.squarePublicUrl && (
+              <a
+                href={invoice.squarePublicUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs text-forest-700 hover:underline px-1"
+              >
+                <CreditCard size={12} /> View Square payment page
+              </a>
+            )}
+            {squareReady && !invoice.squarePublicUrl && invoice.status !== "paid" && (
+              <form action={setUpSquare}>
+                <Button type="submit" variant="secondary" className="w-full">
+                  <CreditCard size={14} /> Set up Square payment link
+                </Button>
+              </form>
+            )}
+            {!squareReady && (
+              <p className="text-xs text-forest-950/40 px-1">
+                Square isn&apos;t connected yet — online payments aren&apos;t available.
+              </p>
             )}
             {invoice.status === "draft" && (
               <form action={markSent}>

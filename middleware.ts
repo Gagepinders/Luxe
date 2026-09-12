@@ -4,10 +4,19 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 // Routes that must stay reachable without a session: the login page itself,
 // secret-key-gated endpoints that authenticate themselves via their own
 // ?key= check rather than via login (maintenance endpoints, and the public
-// lead-capture webhook called by the website's own contact form), and the
-// customer-facing quote/invoice links (gated by an unguessable token in the
-// URL itself, not a login).
-const PUBLIC_PATHS = ["/login", "/api/seed", "/api/setup-admin", "/api/leads", "/q", "/i"];
+// lead-capture webhook called by the website's own contact form), the
+// Square payment webhook (authenticates itself via an HMAC signature, not a
+// login), and the customer-facing quote/invoice links (gated by an
+// unguessable token in the URL itself, not a login).
+const PUBLIC_PATHS = [
+  "/login",
+  "/api/seed",
+  "/api/setup-admin",
+  "/api/leads",
+  "/api/webhooks/square",
+  "/q",
+  "/i",
+];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
