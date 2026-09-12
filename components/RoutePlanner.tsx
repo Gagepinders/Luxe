@@ -29,7 +29,7 @@ export type RouteStop = {
 };
 
 function haversine(a: [number, number], b: [number, number]) {
-  const R = 6371;
+  const R = 3958.8; // Earth's radius in miles
   const dLat = ((b[0] - a[0]) * Math.PI) / 180;
   const dLng = ((b[1] - a[1]) * Math.PI) / 180;
   const lat1 = (a[0] * Math.PI) / 180;
@@ -143,7 +143,7 @@ export default function RoutePlanner({
             </div>
           </div>
           <p className="text-xs text-forest-950/50 mb-3">
-            ~{totalDistance.toFixed(1)} km driving · {formatCurrency(totalValue)} scheduled
+            ~{totalDistance.toFixed(1)} mi driving · {formatCurrency(totalValue)} scheduled
           </p>
 
           {order.length === 0 ? (
