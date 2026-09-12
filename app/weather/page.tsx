@@ -1,13 +1,18 @@
 import { getMonitoredAreas } from "@/lib/monitoredAreas";
 import { getForecastsForAreas } from "@/lib/weather";
-import { PageHeader } from "@/components/ui";
+import { getSnowDispatchCandidates } from "@/lib/snowDispatch";
+import { dispatchSnowDay } from "@/app/actions/snowDispatch";
+import { PageHeader, Button } from "@/components/ui";
+import { CloudSnow, Truck } from "lucide-react";
 import AreaForecastCard from "@/components/AreaForecastCard";
-import { CloudSnow } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function WeatherPage() {
-  const areas = await getMonitoredAreas();
+  const [areas, candidates] = await Promise.all([
+    getMonitoredAreas(),
+    getSnowDispatchCandidates(),
+  ]);
   const withForecasts = await getForecastsForAreas(areas);
   const alertAreas = withForecasts.filter((a) => a.forecast?.isSnowDay);
 
@@ -32,6 +37,28 @@ export default async function WeatherPage() {
                 .join(" · ")}
             </p>
           </div>
+        </div>
+      )}
+
+      {candidates.length > 0 && (
+        <div className="mb-6 card p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <Truck className="text-forest-700 mt-0.5 flex-shrink-0" size={18} />
+            <div className="text-sm">
+              <p className="font-semibold text-forest-950">
+                {candidates.length} snow removal customer{candidates.length === 1 ? "" : "s"} not
+                yet scheduled today.
+              </p>
+              <p className="text-forest-950/60 mt-0.5">
+                Dispatches a job for each — for a storm hitting today, not the regular weekly clock.
+              </p>
+            </div>
+          </div>
+          <form action={dispatchSnowDay}>
+            <Button type="submit">
+              <Truck size={14} /> Dispatch all for today
+            </Button>
+          </form>
         </div>
       )}
 

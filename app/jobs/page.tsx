@@ -22,9 +22,9 @@ export const dynamic = "force-dynamic";
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; status?: string; month?: string }>;
+  searchParams: Promise<{ view?: string; status?: string; month?: string; dispatched?: string }>;
 }) {
-  const { view = "list", status, month } = await searchParams;
+  const { view = "list", status, month, dispatched } = await searchParams;
 
   const jobs = await prisma.job.findMany({
     where: status ? { status } : {},
@@ -43,6 +43,14 @@ export default async function JobsPage({
           </Button>
         }
       />
+
+      {dispatched !== undefined && (
+        <div className="mb-5 rounded-lg bg-success-100 text-success px-4 py-2.5 text-sm font-medium">
+          {dispatched === "0"
+            ? "No snow customers needed dispatching — everyone already has a job scheduled today."
+            : `Dispatched ${dispatched} snow removal job${dispatched === "1" ? "" : "s"} for today.`}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex gap-1 border border-border-subtle rounded-lg p-1">
