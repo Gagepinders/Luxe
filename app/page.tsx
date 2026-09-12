@@ -87,8 +87,13 @@ export default async function Dashboard() {
   const won = quotesAll.filter((q) => q.status === "won");
   const winRate = decided.length > 0 ? (won.length / decided.length) * 100 : 0;
 
+  const STALE_QUOTE_DAYS = 5;
+  const staleQuoteCutoff = new Date(now.getTime() - STALE_QUOTE_DAYS * 24 * 60 * 60 * 1000);
   const overdueQuotes = quotesAll.filter(
-    (q) => q.status === "sent" && q.validUntil && q.validUntil < now
+    (q) =>
+      q.status === "sent" &&
+      ((q.validUntil && q.validUntil < now) ||
+        (q.sentAt && q.sentAt < staleQuoteCutoff))
   );
   const overdueInvoices = invoicesAll.filter(
     (i) => i.status === "sent" && i.dueAt && i.dueAt < now
@@ -139,9 +144,10 @@ export default async function Dashboard() {
         <StatTile icon={Receipt} label="Outstanding invoices" value={formatCurrency(outstandingInvoices)} />
         <StatTile
           icon={AlertTriangle}
-          label="Overdue (quotes + inv.)"
+          label="Needs follow-up (quotes + inv.)"
           value={String(overdueQuotes.length + overdueInvoices.length)}
           tone={overdueQuotes.length + overdueInvoices.length > 0 ? "warning" : undefined}
+          href="/quotes?status=sent"
         />
         <StatTile icon={Repeat} label="Recurring rev. (mo. est.)" value={formatCurrency(recurringMonthlyValue)} />
         <StatTile icon={Users} label="Customers" value={String(customerCount)} />

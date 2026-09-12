@@ -14,7 +14,7 @@ import {
 } from "@/app/actions/jobs";
 import { uploadJobPhoto, deleteJobPhoto } from "@/app/actions/jobPhotos";
 import { addJobExpense, deleteJobExpense } from "@/app/actions/jobExpenses";
-import { Pencil, Trash2, Play, CheckCircle2, XCircle, Repeat, Camera, Upload, Receipt, Star } from "lucide-react";
+import { Pencil, Trash2, Play, CheckCircle2, XCircle, Repeat, Camera, Upload, Receipt, Star, KeyRound, AlertTriangle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +69,33 @@ export default async function JobDetailPage({
           </div>
         }
       />
+
+      {(job.property.gateCode || job.property.hazards || job.property.accessNotes) && (
+        <section className="rounded-lg border border-gold-500/40 bg-gold-100/50 p-4 space-y-2 text-sm">
+          <p className="flex items-center gap-1.5 font-semibold text-forest-950">
+            <KeyRound size={15} className="text-gold-600" /> Access &amp; site info
+          </p>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {job.property.gateCode && (
+              <div>
+                <p className="text-xs text-forest-950/50">Gate code</p>
+                <p className="font-medium text-forest-950">{job.property.gateCode}</p>
+              </div>
+            )}
+            {job.property.accessNotes && (
+              <div className="sm:col-span-2">
+                <p className="text-xs text-forest-950/50">Access notes</p>
+                <p className="text-forest-950/80">{job.property.accessNotes}</p>
+              </div>
+            )}
+          </div>
+          {job.property.hazards && (
+            <p className="flex items-start gap-1.5 pt-2 border-t border-gold-500/30 text-danger font-medium">
+              <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" /> {job.property.hazards}
+            </p>
+          )}
+        </section>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
