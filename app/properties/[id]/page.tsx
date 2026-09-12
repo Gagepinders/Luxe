@@ -5,7 +5,9 @@ import { PageHeader, Button, StatusBadge } from "@/components/ui";
 import { formatSqft, formatDateShort } from "@/lib/format";
 import PropertyMap, { type Measurement } from "@/components/PropertyMapField";
 import { deleteProperty } from "@/app/actions/properties";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { sendMeasuredInstantQuote } from "@/app/actions/instantQuote";
+import { needsManualQuote } from "@/lib/pricing";
+import { Pencil, Trash2, Plus, Send } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -122,6 +124,45 @@ export default async function PropertyDetailPage({
               </div>
             )}
           </section>
+
+          {((property.lawnSqft && !needsManualQuote(property.lawnSqft)) ||
+            (property.driveSqft && !needsManualQuote(property.driveSqft))) && (
+            <section className="card p-5 space-y-2">
+              <h2 className="font-semibold text-forest-950 text-sm">Send an instant price</h2>
+              <p className="text-xs text-forest-950/50">
+                Emails the customer a link to view and approve or decline this price online — for
+                instant-quote requests you measured yourself.
+              </p>
+              <div className="flex flex-col gap-2 pt-1">
+                {property.lawnSqft && !needsManualQuote(property.lawnSqft) && (
+                  <form action={sendMeasuredInstantQuote.bind(null, id, "mowing")}>
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className="w-full"
+                      disabled={!property.customer.email}
+                      title={!property.customer.email ? "Add an email for this customer first" : undefined}
+                    >
+                      <Send size={14} /> Send instant mowing price
+                    </Button>
+                  </form>
+                )}
+                {property.driveSqft && !needsManualQuote(property.driveSqft) && (
+                  <form action={sendMeasuredInstantQuote.bind(null, id, "plowing")}>
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className="w-full"
+                      disabled={!property.customer.email}
+                      title={!property.customer.email ? "Add an email for this customer first" : undefined}
+                    >
+                      <Send size={14} /> Send instant plowing price
+                    </Button>
+                  </form>
+                )}
+              </div>
+            </section>
+          )}
 
           <section className="card p-5">
             <div className="flex items-center justify-between mb-3">

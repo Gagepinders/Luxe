@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = "Instant Lawn Mowing & Plowing Quote | Luxe Landscape & Snow";
   const description =
     `Get an instant price for lawn mowing or driveway plowing in ${company.serviceArea}. ` +
-    `Trace your property on the map and get a real quote in under a minute — no waiting for a callback.`;
+    `Enter your address and get a real quote in under a minute — no waiting for a callback.`;
   return {
     title,
     description,
@@ -45,8 +45,8 @@ export default async function QuotePage() {
             Get an instant price — no waiting for a callback
           </h1>
           <p className="text-forest-950/60 max-w-xl mx-auto">
-            Trace your lawn or driveway on the map and see exactly what your visit costs in under
-            a minute. Approve it and you&rsquo;re booked — no phone tag, no back-and-forth.
+            Enter your address and see what your visit costs in under a minute. Approve it and
+            you&rsquo;re booked — no phone tag, no back-and-forth.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-forest-950/50 pt-1">
             <span className="flex items-center gap-1">

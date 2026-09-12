@@ -6,6 +6,7 @@ export function isChromelessPath(pathname: string) {
     pathname === "/login" ||
     pathname.startsWith("/q/") ||
     pathname.startsWith("/i/") ||
-    pathname.startsWith("/quote")
+    pathname === "/quote" ||
+    pathname.startsWith("/quote/")
   );
 }
