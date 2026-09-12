@@ -1,12 +1,5 @@
 // Pages that render standalone, without the internal CRM sidebar/nav chrome:
-// the login screen, customer-facing quote/invoice links, and the public
-// instant-quote marketing funnel.
+// the login screen, and customer-facing quote/invoice links.
 export function isChromelessPath(pathname: string) {
-  return (
-    pathname === "/login" ||
-    pathname.startsWith("/q/") ||
-    pathname.startsWith("/i/") ||
-    pathname === "/quote" ||
-    pathname.startsWith("/quote/")
-  );
+  return pathname === "/login" || pathname.startsWith("/q/") || pathname.startsWith("/i/");
 }
