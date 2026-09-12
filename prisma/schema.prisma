@@ -208,6 +208,8 @@ model Invoice {
   squareOrderId    String?
   squarePublicUrl  String? // Square-hosted payment page for this invoice
 
+  lastReminderSentAt DateTime? // last automated overdue-payment reminder email
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
