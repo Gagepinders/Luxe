@@ -9,3 +9,7 @@ export function getResendClient() {
 export function getFromAddress() {
   return process.env.RESEND_FROM_EMAIL || "Luxe Landscape & Snow <onboarding@resend.dev>";
 }
+
+export function getReplyToAddress() {
+  return process.env.RESEND_REPLY_TO_EMAIL || undefined;
+}

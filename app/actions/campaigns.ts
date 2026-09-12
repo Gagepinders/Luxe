@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getResendClient, getFromAddress } from "@/lib/resend";
+import { getResendClient, getFromAddress, getReplyToAddress } from "@/lib/resend";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Prisma } from "@/app/generated/prisma/client";
@@ -99,6 +99,7 @@ export async function sendCampaign(id: string) {
       await resend!.emails.send({
         from: getFromAddress(),
         to: recipient.email,
+        replyTo: getReplyToAddress(),
         subject: campaign.subject,
         html: personalizedBody,
       });
