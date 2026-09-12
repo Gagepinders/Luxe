@@ -72,7 +72,7 @@ export default function GlobalSearch() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setOpen(true)}
           placeholder="Search everything…"
-          className="w-full rounded-lg border border-white/10 bg-white/5 pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-forest-100/40 focus:outline-none focus:ring-1 focus:ring-gold-500"
+          className="w-full rounded-lg border border-white/10 !bg-white/10 pl-8 pr-7 py-1.5 text-xs !text-white placeholder:text-forest-100/40 focus:outline-none focus:ring-1 focus:ring-gold-500"
         />
         {query && (
           <button
