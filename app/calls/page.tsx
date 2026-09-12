@@ -4,6 +4,7 @@ import { PageHeader, StatusBadge } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { getPendingFollowUps } from "@/lib/callLogs";
 import { clearFollowUp } from "@/app/actions/calls";
+import CopyButton from "@/components/CopyButton";
 import { PhoneCall } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -131,6 +132,7 @@ function FollowUpGroup({
                     <PhoneCall size={12} /> Call
                   </a>
                 )}
+                {f.customerPhone && <CopyButton value={f.customerPhone} label="Copy phone number" />}
                 <form action={clearAction}>
                   <button
                     type="submit"

@@ -6,6 +6,7 @@ import { formatCurrency, formatDate, formatDateShort } from "@/lib/format";
 import { addCustomerNote, deleteCustomer } from "@/app/actions/customers";
 import { logCall, clearFollowUp } from "@/app/actions/calls";
 import { CALL_OUTCOME_LABELS } from "@/lib/callLogs";
+import CopyButton from "@/components/CopyButton";
 import { Plus, Mail, Phone, Building2, Pencil, Trash2, MapPin, PhoneCall } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -222,12 +223,15 @@ export default async function CustomerDetailPage({
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-forest-950 text-sm">Call</h2>
               {telHref ? (
-                <a
-                  href={telHref}
-                  className="flex items-center gap-1.5 rounded-lg bg-forest-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-forest-800"
-                >
-                  <PhoneCall size={13} /> Call {customer.phone}
-                </a>
+                <div className="flex items-center gap-1.5">
+                  <a
+                    href={telHref}
+                    className="flex items-center gap-1.5 rounded-lg bg-forest-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-forest-800"
+                  >
+                    <PhoneCall size={13} /> Call {customer.phone}
+                  </a>
+                  <CopyButton value={customer.phone!} label="Copy phone number" />
+                </div>
               ) : (
                 <span className="text-xs text-forest-950/40">No phone on file</span>
               )}
