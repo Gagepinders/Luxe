@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { getCompanyProfile } from "@/lib/companyProfile";
 import { PageHeader, Button, StatusBadge } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { setInvoiceStatus, deleteInvoice } from "@/app/actions/invoices";
+import { setInvoiceStatus, deleteInvoice, sendInvoiceToCustomer } from "@/app/actions/invoices";
+import { getAppUrl } from "@/lib/appUrl";
 import PrintButton from "@/components/PrintButton";
-import { Pencil, Trash2, Send, CheckCircle2 } from "lucide-react";
+import { Pencil, Trash2, Send, CheckCircle2, Link2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,8 @@ export default async function InvoiceDetailPage({
   const markSent = setInvoiceStatus.bind(null, id, "sent");
   const markPaid = setInvoiceStatus.bind(null, id, "paid");
   const markDraft = setInvoiceStatus.bind(null, id, "draft");
+  const sendToCustomer = sendInvoiceToCustomer.bind(null, id);
+  const publicLink = invoice.publicToken ? `${getAppUrl()}/i/${invoice.publicToken}` : null;
   const remove = deleteInvoice.bind(null, id);
 
   return (
@@ -164,10 +167,33 @@ export default async function InvoiceDetailPage({
 
           <section className="card p-5 space-y-2">
             <h2 className="font-semibold text-forest-950 mb-2 text-sm">Actions</h2>
+            {invoice.status !== "paid" && (
+              <form action={sendToCustomer}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!invoice.customer.email}
+                  title={!invoice.customer.email ? "Add an email for this customer first" : undefined}
+                >
+                  <Send size={14} /> {invoice.status === "draft" ? "Email" : "Re-send"} invoice to
+                  customer
+                </Button>
+              </form>
+            )}
+            {publicLink && (
+              <a
+                href={publicLink}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs text-forest-700 hover:underline px-1"
+              >
+                <Link2 size={12} /> View customer-facing link
+              </a>
+            )}
             {invoice.status === "draft" && (
               <form action={markSent}>
-                <Button type="submit" className="w-full">
-                  <Send size={14} /> Mark as sent
+                <Button type="submit" variant="secondary" className="w-full">
+                  Mark as sent (no email)
                 </Button>
               </form>
             )}

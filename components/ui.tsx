@@ -30,6 +30,7 @@ export function Button({
   className = "",
   size = "md",
   disabled = false,
+  title,
 }: {
   children: ReactNode;
   href?: string;
@@ -39,6 +40,7 @@ export function Button({
   className?: string;
   size?: "sm" | "md";
   disabled?: boolean;
+  title?: string;
 }) {
   const base =
     "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors whitespace-nowrap";
@@ -55,13 +57,13 @@ export function Button({
 
   if (href) {
     return (
-      <Link href={href} className={cls}>
+      <Link href={href} className={cls} title={title}>
         {children}
       </Link>
     );
   }
   return (
-    <button type={type} onClick={onClick} disabled={disabled} className={cls}>
+    <button type={type} onClick={onClick} disabled={disabled} className={cls} title={title}>
       {children}
     </button>
   );

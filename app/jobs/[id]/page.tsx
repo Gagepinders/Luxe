@@ -3,10 +3,10 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Button, StatusBadge } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { deleteJob, setJobStatus, duplicateJobToNext } from "@/app/actions/jobs";
+import { deleteJob, setJobStatus, duplicateJobToNext, requestReview } from "@/app/actions/jobs";
 import { uploadJobPhoto, deleteJobPhoto } from "@/app/actions/jobPhotos";
 import { addJobExpense, deleteJobExpense } from "@/app/actions/jobExpenses";
-import { Pencil, Trash2, Play, CheckCircle2, XCircle, Repeat, Camera, Upload, Receipt } from "lucide-react";
+import { Pencil, Trash2, Play, CheckCircle2, XCircle, Repeat, Camera, Upload, Receipt, Star } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +35,7 @@ export default async function JobDetailPage({
   const reopen = setJobStatus.bind(null, id, "scheduled");
   const remove = deleteJob.bind(null, id);
   const duplicate = duplicateJobToNext.bind(null, id);
+  const sendReviewRequest = requestReview.bind(null, id);
   const upload = uploadJobPhoto.bind(null, id);
   const addExpense = addJobExpense.bind(null, id);
 
@@ -288,6 +289,19 @@ export default async function JobDetailPage({
               <form action={duplicate}>
                 <Button type="submit" variant="secondary" className="w-full">
                   <Repeat size={14} /> Schedule next occurrence
+                </Button>
+              </form>
+            )}
+            {job.status === "completed" && (
+              <form action={sendReviewRequest}>
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  className="w-full"
+                  disabled={!job.customer.email}
+                  title={!job.customer.email ? "Add an email for this customer first" : undefined}
+                >
+                  <Star size={14} className="text-gold-500" /> Request a review
                 </Button>
               </form>
             )}

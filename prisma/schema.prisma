@@ -102,6 +102,7 @@ model Quote {
   lostReason  String?
   validUntil  DateTime?
   notes       String?
+  publicToken String?  @unique // lets the customer view + approve/decline online, no login
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -194,11 +195,12 @@ model Invoice {
   jobId      String?
   job        Job?      @relation(fields: [jobId], references: [id])
 
-  status   String    @default("draft") // draft | sent | paid | overdue
-  issuedAt DateTime  @default(now())
-  dueAt    DateTime?
-  paidAt   DateTime?
-  notes    String?
+  status      String    @default("draft") // draft | sent | paid | overdue
+  issuedAt    DateTime  @default(now())
+  dueAt       DateTime?
+  paidAt      DateTime?
+  notes       String?
+  publicToken String?   @unique // lets the customer view the invoice online, no login
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -290,4 +292,5 @@ model CompanyProfile {
   lng         Float  @default(-73.0590180)
   serviceArea String @default("Chittenden County, VT — Burlington, Essex Junction, Williston & surrounding")
   website     String @default("luxelandscapevt.com")
+  googleReviewUrl String? // link customers land on for "leave us a review"
 }

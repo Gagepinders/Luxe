@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getResendClient, getFromAddress, getReplyToAddress } from "@/lib/resend";
+import { getCompanyProfile } from "@/lib/companyProfile";
 
 function jobDataFromForm(formData: FormData) {
   const scheduledDateRaw = String(formData.get("scheduledDate") ?? "");
@@ -112,4 +114,41 @@ export async function setJobRouteOrder(orderedIds: string[]) {
     )
   );
   revalidatePath("/routes");
+}
+
+export async function requestReview(id: string) {
+  const job = await prisma.job.findUniqueOrThrow({ where: { id }, include: { customer: true } });
+  const company = await getCompanyProfile();
+
+  if (!job.customer.email) throw new Error("This customer has no email on file.");
+  if (!company.googleReviewUrl) {
+    throw new Error("Add a Google review link in Settings before sending review requests.");
+  }
+
+  const resend = getResendClient();
+  if (!resend) throw new Error("Email isn't configured on this deployment (RESEND_API_KEY missing).");
+
+  await resend.emails.send({
+    from: getFromAddress(),
+    to: job.customer.email,
+    replyTo: getReplyToAddress(),
+    subject: `How did we do, ${job.customer.name.split(" ")[0]}?`,
+    html: `
+      <p>Hi ${job.customer.name.split(" ")[0]},</p>
+      <p>Thanks for choosing ${company.name} for "${job.title}"! If you have a minute, a quick review helps us out a lot.</p>
+      <p><a href="${company.googleReviewUrl}" style="display:inline-block;background:#235233;color:#fff;padding:10px 22px;border-radius:6px;text-decoration:none;font-weight:600;">Leave a review</a></p>
+      <p>Thanks again,<br>${company.name}</p>
+    `,
+  });
+
+  await prisma.activity.create({
+    data: {
+      customerId: job.customerId,
+      type: "email",
+      body: `Review request sent for job "${job.title}".`,
+    },
+  });
+
+  revalidatePath(`/jobs/${id}`);
+  redirect(`/jobs/${id}`);
 }

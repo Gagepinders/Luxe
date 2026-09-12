@@ -3,6 +3,11 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getResendClient, getFromAddress, getReplyToAddress } from "@/lib/resend";
+import { getCompanyProfile } from "@/lib/companyProfile";
+import { generateToken } from "@/lib/tokens";
+import { getAppUrl } from "@/lib/appUrl";
+import { formatCurrency } from "@/lib/format";
 
 type LineItemPayload = {
   description: string;
@@ -127,5 +132,59 @@ export async function setInvoiceStatus(id: string, status: "draft" | "sent" | "p
   });
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${id}`);
+  redirect(`/invoices/${id}`);
+}
+
+// Emails the customer a link to view the invoice online — no login required.
+export async function sendInvoiceToCustomer(id: string) {
+  const invoice = await prisma.invoice.findUniqueOrThrow({
+    where: { id },
+    include: { customer: true, lineItems: true },
+  });
+  if (!invoice.customer.email) {
+    throw new Error("This customer has no email on file — add one before sending.");
+  }
+
+  const token = invoice.publicToken ?? generateToken();
+  const total = invoice.lineItems.reduce((s, li) => s + li.quantity * li.unitPrice, 0);
+  const company = await getCompanyProfile();
+  const link = `${getAppUrl()}/i/${token}`;
+
+  const resend = getResendClient();
+  if (!resend) {
+    throw new Error("Email isn't configured on this deployment (RESEND_API_KEY missing).");
+  }
+
+  await resend.emails.send({
+    from: getFromAddress(),
+    to: invoice.customer.email,
+    replyTo: getReplyToAddress(),
+    subject: `Invoice #${invoice.number} from ${company.name}`,
+    html: `
+      <p>Hi ${invoice.customer.name.split(" ")[0]},</p>
+      <p>Here's invoice #${invoice.number} from ${company.name} for <strong>${formatCurrency(total)}</strong>${
+        invoice.dueAt ? `, due ${new Date(invoice.dueAt).toLocaleDateString()}` : ""
+      }.</p>
+      <p><a href="${link}" style="display:inline-block;background:#235233;color:#fff;padding:10px 22px;border-radius:6px;text-decoration:none;font-weight:600;">View invoice</a></p>
+      <p style="color:#666;font-size:13px;">Or copy this link: ${link}</p>
+      <p>Thanks,<br>${company.name}<br>${company.phone}</p>
+    `,
+  });
+
+  await prisma.invoice.update({
+    where: { id },
+    data: { publicToken: token, status: invoice.status === "draft" ? "sent" : invoice.status },
+  });
+
+  await prisma.activity.create({
+    data: {
+      customerId: invoice.customerId,
+      type: "email",
+      body: `Invoice #${invoice.number} emailed to customer.`,
+    },
+  });
+
+  revalidatePath(`/invoices/${id}`);
+  revalidatePath("/invoices");
   redirect(`/invoices/${id}`);
 }

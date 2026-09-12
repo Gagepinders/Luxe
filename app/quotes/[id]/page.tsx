@@ -7,8 +7,10 @@ import {
   setQuoteStatus,
   deleteQuote,
   convertQuoteToJob,
+  sendQuoteToCustomer,
 } from "@/app/actions/quotes";
-import { Pencil, Trash2, Send, CheckCircle2, XCircle, ArrowRightCircle } from "lucide-react";
+import { getAppUrl } from "@/lib/appUrl";
+import { Pencil, Trash2, Send, CheckCircle2, XCircle, ArrowRightCircle, Link2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -31,11 +33,12 @@ export default async function QuoteDetailPage({
 
   const total = quote.lineItems.reduce((s, li) => s + li.quantity * li.unitPrice, 0);
 
-  const markSent = setQuoteStatus.bind(null, id, "sent");
   const markWon = setQuoteStatus.bind(null, id, "won");
   const markLost = setQuoteStatus.bind(null, id, "lost");
   const convert = convertQuoteToJob.bind(null, id);
   const remove = deleteQuote.bind(null, id, quote.customerId);
+  const sendToCustomer = sendQuoteToCustomer.bind(null, id);
+  const publicLink = quote.publicToken ? `${getAppUrl()}/q/${quote.publicToken}` : null;
 
   return (
     <main className="p-6 md:p-8 space-y-6">
@@ -148,12 +151,28 @@ export default async function QuoteDetailPage({
 
           <section className="card p-5 space-y-2">
             <h2 className="font-semibold text-forest-950 mb-2 text-sm">Pipeline actions</h2>
-            {quote.status === "draft" && (
-              <form action={markSent}>
-                <Button type="submit" className="w-full">
-                  <Send size={14} /> Mark as sent
+            {(quote.status === "draft" || quote.status === "sent") && (
+              <form action={sendToCustomer}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!quote.customer.email}
+                  title={!quote.customer.email ? "Add an email for this customer first" : undefined}
+                >
+                  <Send size={14} /> {quote.status === "sent" ? "Re-send" : "Email"} quote to
+                  customer
                 </Button>
               </form>
+            )}
+            {publicLink && (
+              <a
+                href={publicLink}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs text-forest-700 hover:underline px-1"
+              >
+                <Link2 size={12} /> View customer-facing link
+              </a>
             )}
             {(quote.status === "draft" || quote.status === "sent") && (
               <>

@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 // Routes that must stay reachable without a session: the login page itself,
-// and secret-key-gated endpoints that authenticate themselves via their own
+// secret-key-gated endpoints that authenticate themselves via their own
 // ?key= check rather than via login (maintenance endpoints, and the public
-// lead-capture webhook called by the website's own contact form).
-const PUBLIC_PATHS = ["/login", "/api/seed", "/api/setup-admin", "/api/leads"];
+// lead-capture webhook called by the website's own contact form), and the
+// customer-facing quote/invoice links (gated by an unguessable token in the
+// URL itself, not a login).
+const PUBLIC_PATHS = ["/login", "/api/seed", "/api/setup-admin", "/api/leads", "/q", "/i"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

@@ -3,6 +3,11 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getResendClient, getFromAddress, getReplyToAddress } from "@/lib/resend";
+import { getCompanyProfile } from "@/lib/companyProfile";
+import { generateToken } from "@/lib/tokens";
+import { getAppUrl } from "@/lib/appUrl";
+import { formatCurrency } from "@/lib/format";
 
 type LineItemPayload = {
   description: string;
@@ -217,4 +222,100 @@ export async function convertQuoteToJob(id: string) {
   revalidatePath("/jobs");
   revalidatePath(`/quotes/${id}`);
   redirect(`/jobs/${job.id}/edit`);
+}
+
+// Emails the customer a link to view and approve/decline the quote online —
+// no login required on their end. Reuses the token if this quote was
+// already sent before, so re-sending doesn't break a link already shared.
+export async function sendQuoteToCustomer(id: string) {
+  const quote = await prisma.quote.findUniqueOrThrow({
+    where: { id },
+    include: { customer: true, lineItems: true },
+  });
+  if (!quote.customer.email) {
+    throw new Error("This customer has no email on file — add one before sending.");
+  }
+
+  const token = quote.publicToken ?? generateToken();
+  const total = quote.lineItems.reduce((s, li) => s + li.quantity * li.unitPrice, 0);
+  const company = await getCompanyProfile();
+  const link = `${getAppUrl()}/q/${token}`;
+
+  const resend = getResendClient();
+  if (!resend) {
+    throw new Error("Email isn't configured on this deployment (RESEND_API_KEY missing).");
+  }
+
+  await resend.emails.send({
+    from: getFromAddress(),
+    to: quote.customer.email,
+    replyTo: getReplyToAddress(),
+    subject: `Your quote from ${company.name}${quote.title ? ` — ${quote.title}` : ""}`,
+    html: `
+      <p>Hi ${quote.customer.name.split(" ")[0]},</p>
+      <p>Here's your quote${quote.title ? ` for "${quote.title}"` : ""} from ${company.name}, totaling <strong>${formatCurrency(total)}</strong>.</p>
+      <p><a href="${link}" style="display:inline-block;background:#235233;color:#fff;padding:10px 22px;border-radius:6px;text-decoration:none;font-weight:600;">View & respond to quote</a></p>
+      <p style="color:#666;font-size:13px;">Or copy this link: ${link}</p>
+      <p>Thanks,<br>${company.name}<br>${company.phone}</p>
+    `,
+  });
+
+  await prisma.quote.update({
+    where: { id },
+    data: { publicToken: token, status: "sent", sentAt: quote.sentAt ?? new Date() },
+  });
+
+  await prisma.customer.update({
+    where: { id: quote.customerId },
+    data: { pipelineStage: "estimate_sent" },
+  });
+
+  await prisma.activity.create({
+    data: {
+      customerId: quote.customerId,
+      type: "email",
+      body: `Quote #${quote.number} emailed to customer for online approval.`,
+    },
+  });
+
+  revalidatePath(`/quotes/${id}`);
+  revalidatePath("/quotes");
+  revalidatePath("/pipeline");
+  redirect(`/quotes/${id}`);
+}
+
+// Called from the public /q/[token] page — no session, so this must never
+// trust anything but the token itself to identify the quote.
+export async function respondToQuotePublic(token: string, decision: "won" | "lost") {
+  const quote = await prisma.quote.findUnique({ where: { publicToken: token } });
+  if (!quote) throw new Error("Quote not found.");
+
+  if (quote.status !== "won" && quote.status !== "lost") {
+    await prisma.quote.update({
+      where: { id: quote.id },
+      data: { status: decision, decidedAt: new Date() },
+    });
+
+    await prisma.customer.update({
+      where: { id: quote.customerId },
+      data: {
+        pipelineStage: decision,
+        status: decision === "won" ? "active" : undefined,
+      },
+    });
+
+    await prisma.activity.create({
+      data: {
+        customerId: quote.customerId,
+        type: "status_change",
+        body: `Customer ${decision === "won" ? "approved" : "declined"} quote #${quote.number} online.`,
+      },
+    });
+
+    revalidatePath(`/quotes/${quote.id}`);
+    revalidatePath("/quotes");
+    revalidatePath("/pipeline");
+  }
+
+  redirect(`/q/${token}`);
 }

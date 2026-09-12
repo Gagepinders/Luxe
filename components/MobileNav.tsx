@@ -21,9 +21,11 @@ import {
   BarChart3,
   Boxes,
   Map,
+  Settings,
   X,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
+import { isChromelessPath } from "@/lib/publicPaths";
 
 const PRIMARY = [
   { href: "/", label: "Home", icon: LayoutDashboard },
@@ -44,13 +46,14 @@ const MORE = [
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/campaigns", label: "Campaigns", icon: Mail },
   { href: "/team", label: "Team", icon: UserCog },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function MobileNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const moreActive = MORE.some((item) => pathname.startsWith(item.href));
-  if (pathname === "/login") return null;
+  if (isChromelessPath(pathname)) return null;
 
   return (
     <>

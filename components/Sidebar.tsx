@@ -20,8 +20,10 @@ import {
   BarChart3,
   Boxes,
   Map,
+  Settings,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
+import { isChromelessPath } from "@/lib/publicPaths";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -39,11 +41,12 @@ const NAV = [
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/campaigns", label: "Campaigns", icon: Mail },
   { href: "/team", label: "Team", icon: UserCog },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  if (pathname === "/login") return null;
+  if (isChromelessPath(pathname)) return null;
 
   return (
     <aside className="no-print hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 bg-forest-950 text-forest-50">
