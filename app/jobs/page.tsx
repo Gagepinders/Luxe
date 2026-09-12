@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, StatusBadge, EmptyState } from "@/components/ui";
+import { PageHeader, Button, EmptyState } from "@/components/ui";
+import StatusDropdown from "@/components/StatusDropdown";
+import { setJobStatus } from "@/app/actions/jobs";
+import { JOB_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatDateShort, formatCurrency } from "@/lib/format";
 import { Plus, LayoutList, CalendarDays } from "lucide-react";
 import {
@@ -122,7 +125,11 @@ export default async function JobsPage({
                     {formatCurrency(j.price)}
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={j.status} />
+                    <StatusDropdown
+                      value={j.status}
+                      options={JOB_STATUS_OPTIONS}
+                      onChange={setJobStatus.bind(null, j.id)}
+                    />
                   </td>
                 </tr>
               ))}

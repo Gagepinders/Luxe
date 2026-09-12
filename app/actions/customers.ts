@@ -75,6 +75,19 @@ const PIPELINE_STAGES = [
   "lost",
 ];
 
+const CUSTOMER_STATUSES = ["active", "inactive", "lead"];
+
+export async function setCustomerStatus(id: string, status: string) {
+  if (!CUSTOMER_STATUSES.includes(status)) throw new Error("Invalid status");
+  await prisma.customer.update({ where: { id }, data: { status } });
+  await prisma.activity.create({
+    data: { customerId: id, type: "status_change", body: `Status changed to "${status}".` },
+  });
+  revalidatePath("/customers");
+  revalidatePath(`/customers/${id}`);
+  revalidatePath("/pipeline");
+}
+
 export async function setPipelineStage(id: string, stage: string) {
   if (!PIPELINE_STAGES.includes(stage)) throw new Error("Invalid pipeline stage");
   const customer = await prisma.customer.update({

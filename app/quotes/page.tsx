@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, StatusBadge, EmptyState } from "@/components/ui";
+import { PageHeader, Button, EmptyState } from "@/components/ui";
+import StatusDropdown from "@/components/StatusDropdown";
+import { setQuoteStatus } from "@/app/actions/quotes";
+import { QUOTE_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Plus } from "lucide-react";
 
@@ -125,7 +128,11 @@ export default async function QuotesPage({
                     {formatDate(q.createdAt)}
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={q.status} />
+                    <StatusDropdown
+                      value={q.status}
+                      options={QUOTE_STATUS_OPTIONS}
+                      onChange={setQuoteStatus.bind(null, q.id)}
+                    />
                   </td>
                 </tr>
               ))}

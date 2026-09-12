@@ -115,7 +115,10 @@ export async function deleteInvoice(id: string) {
   redirect("/invoices");
 }
 
-export async function setInvoiceStatus(id: string, status: "draft" | "sent" | "paid" | "overdue") {
+const INVOICE_STATUSES = ["draft", "sent", "paid", "overdue"];
+
+export async function setInvoiceStatus(id: string, status: string) {
+  if (!INVOICE_STATUSES.includes(status)) throw new Error("Invalid invoice status");
   const invoice = await prisma.invoice.findUniqueOrThrow({ where: { id } });
   await prisma.invoice.update({
     where: { id },
@@ -133,7 +136,6 @@ export async function setInvoiceStatus(id: string, status: "draft" | "sent" | "p
   });
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${id}`);
-  redirect(`/invoices/${id}`);
 }
 
 // Creates (if not already created) the Square Order + Invoice behind one of

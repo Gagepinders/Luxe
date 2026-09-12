@@ -69,7 +69,7 @@ export function Button({
   );
 }
 
-const STATUS_STYLES: Record<string, string> = {
+export const STATUS_STYLES: Record<string, string> = {
   draft: "bg-surface-muted text-forest-950/70",
   sent: "bg-ice-100 text-ice-600",
   won: "bg-success-100 text-success",

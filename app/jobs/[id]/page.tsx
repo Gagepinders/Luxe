@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, StatusBadge } from "@/components/ui";
+import { PageHeader, Button } from "@/components/ui";
+import StatusDropdown from "@/components/StatusDropdown";
+import { JOB_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { deleteJob, setJobStatus, duplicateJobToNext, requestReview } from "@/app/actions/jobs";
 import { uploadJobPhoto, deleteJobPhoto } from "@/app/actions/jobPhotos";
@@ -65,7 +67,11 @@ export default async function JobDetailPage({
         <div className="lg:col-span-2 space-y-6">
           <section className="card p-5 space-y-3 text-sm">
             <div className="flex items-center gap-2">
-              <StatusBadge status={job.status} />
+              <StatusDropdown
+                value={job.status}
+                options={JOB_STATUS_OPTIONS}
+                onChange={setJobStatus.bind(null, id)}
+              />
               {job.recurrence !== "none" && (
                 <span className="badge bg-ice-100 text-ice-600">{job.recurrence.replace("_", " ")}</span>
               )}

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, StatusBadge, EmptyState, inputClass } from "@/components/ui";
+import { PageHeader, Button, EmptyState, inputClass } from "@/components/ui";
+import StatusDropdown from "@/components/StatusDropdown";
+import { setCustomerStatus, setPipelineStage } from "@/app/actions/customers";
+import { CUSTOMER_STATUS_OPTIONS, PIPELINE_STAGE_OPTIONS } from "@/lib/statusOptions";
 import { initials } from "@/lib/format";
 import { Plus, Search } from "lucide-react";
 
@@ -147,10 +150,18 @@ export default async function CustomersPage({
                       {won}
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
-                      <StatusBadge status={c.pipelineStage} />
+                      <StatusDropdown
+                        value={c.pipelineStage}
+                        options={PIPELINE_STAGE_OPTIONS}
+                        onChange={setPipelineStage.bind(null, c.id)}
+                      />
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={c.status} />
+                      <StatusDropdown
+                        value={c.status}
+                        options={CUSTOMER_STATUS_OPTIONS}
+                        onChange={setCustomerStatus.bind(null, c.id)}
+                      />
                     </td>
                   </tr>
                 );

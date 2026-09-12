@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Button, StatusBadge } from "@/components/ui";
+import StatusDropdown from "@/components/StatusDropdown";
+import { QUOTE_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   setQuoteStatus,
@@ -120,7 +122,11 @@ export default async function QuoteDetailPage({
 
         <div className="space-y-6">
           <section className="card p-5 space-y-3 text-sm">
-            <StatusBadge status={quote.status} />
+            <StatusDropdown
+              value={quote.status}
+              options={QUOTE_STATUS_OPTIONS}
+              onChange={setQuoteStatus.bind(null, id)}
+            />
             <div>
               <p className="text-xs text-forest-950/50">Customer</p>
               <Link href={`/customers/${quote.customerId}`} className="font-medium text-forest-700 hover:underline">

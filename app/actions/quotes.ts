@@ -134,11 +134,10 @@ export async function deleteQuote(id: string, customerId: string) {
   redirect("/quotes");
 }
 
-export async function setQuoteStatus(
-  id: string,
-  status: "draft" | "sent" | "won" | "lost",
-  formData?: FormData
-) {
+const QUOTE_STATUSES = ["draft", "sent", "won", "lost"];
+
+export async function setQuoteStatus(id: string, status: string, formData?: FormData) {
+  if (!QUOTE_STATUSES.includes(status)) throw new Error("Invalid quote status");
   const quote = await prisma.quote.findUniqueOrThrow({ where: { id } });
   const lostReason = formData ? String(formData.get("lostReason") ?? "").trim() || null : null;
 
@@ -184,7 +183,6 @@ export async function setQuoteStatus(
   revalidatePath(`/quotes/${id}`);
   revalidatePath(`/customers/${quote.customerId}`);
   revalidatePath("/pipeline");
-  redirect(`/quotes/${id}`);
 }
 
 export async function convertQuoteToJob(id: string) {

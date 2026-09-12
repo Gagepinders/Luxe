@@ -62,7 +62,10 @@ export async function deleteJob(id: string) {
   redirect("/jobs");
 }
 
-export async function setJobStatus(id: string, status: "scheduled" | "in_progress" | "completed" | "cancelled") {
+const JOB_STATUSES = ["scheduled", "in_progress", "completed", "cancelled"];
+
+export async function setJobStatus(id: string, status: string) {
+  if (!JOB_STATUSES.includes(status)) throw new Error("Invalid job status");
   await prisma.job.update({
     where: { id },
     data: { status, completedAt: status === "completed" ? new Date() : null },
@@ -70,7 +73,6 @@ export async function setJobStatus(id: string, status: "scheduled" | "in_progres
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${id}`);
   revalidatePath("/routes");
-  redirect(`/jobs/${id}`);
 }
 
 const RECURRENCE_DAYS: Record<string, number> = {

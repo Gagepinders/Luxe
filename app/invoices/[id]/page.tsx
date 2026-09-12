@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCompanyProfile } from "@/lib/companyProfile";
-import { PageHeader, Button, StatusBadge } from "@/components/ui";
+import { PageHeader, Button } from "@/components/ui";
+import StatusDropdown from "@/components/StatusDropdown";
+import { INVOICE_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   setInvoiceStatus,
@@ -156,7 +158,12 @@ export default async function InvoiceDetailPage({
 
         <div className="no-print space-y-3">
           <section className="card p-5 space-y-3 text-sm">
-            <StatusBadge status={effectiveStatus} />
+            <StatusDropdown
+              value={invoice.status}
+              colorKey={effectiveStatus}
+              options={INVOICE_STATUS_OPTIONS}
+              onChange={setInvoiceStatus.bind(null, id)}
+            />
             <div>
               <p className="text-xs text-forest-950/50">Customer</p>
               <Link href={`/customers/${invoice.customerId}`} className="font-medium text-forest-700 hover:underline">

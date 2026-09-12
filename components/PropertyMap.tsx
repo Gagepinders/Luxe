@@ -450,8 +450,8 @@ export default function PropertyMap({
       )}
       {!readOnly && (
         <p className="text-xs text-forest-950/45">
-          Switch to Satellite (top-right) to see real property features. Set the pin, pick a
-          type, then trace an area or mark an obstacle. Drag to pan, scroll or pinch to zoom.
+          Always shows current satellite imagery by default. Set the pin, pick a type, then trace
+          an area or mark an obstacle. Drag to pan, scroll or pinch to zoom.
         </p>
       )}
     </div>

@@ -1,27 +1,41 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import Link from "next/link";
-import { Search, Plus } from "lucide-react";
+import { Search, Ruler } from "lucide-react";
 import MapBaseLayers from "@/components/MapBaseLayers";
+import MapMeasurePanel from "@/components/MapMeasurePanel";
 
 type PropertyPin = {
   id: string;
+  customerId: string;
   customerName: string;
   customerStatus: string; // active | inactive | lead
   label: string;
   addressLine: string;
   city: string;
+  state: string;
+  zip: string;
   lat: number;
   lng: number;
+  measurements: string | null;
+  gateCode: string | null;
+  accessNotes: string | null;
+  hazards: string | null;
 };
+
+type Customer = { id: string; name: string };
 
 type Hq = { label: string; lat: number; lng: number };
 
 type SearchResult = { displayName: string; lat: number; lng: number };
+
+type Panel =
+  | { mode: "create"; addressLine: string; lat: number; lng: number }
+  | { mode: "edit"; property: PropertyPin };
 
 function pinIconFor(status: string) {
   const color = status === "lead" ? "#c9a227" : status === "inactive" ? "#6b7280" : "#235233";
@@ -68,15 +82,19 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 export default function PropertiesMap({
   properties,
   hq,
+  customers,
 }: {
   properties: PropertyPin[];
   hq: Hq;
+  customers: Customer[];
 }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [error, setError] = useState("");
+  const [panel, setPanel] = useState<Panel | null>(null);
 
   async function runSearch(e: FormEvent) {
     e.preventDefault();
@@ -123,12 +141,20 @@ export default function PropertiesMap({
           {searching ? "Searching…" : "Search"}
         </button>
         {selected && (
-          <Link
-            href={`/properties/new?address=${encodeURIComponent(selected.displayName)}&lat=${selected.lat}&lng=${selected.lng}`}
-            className="inline-flex items-center gap-1 rounded-lg border border-border-subtle px-3 py-2 text-sm font-medium hover:bg-surface-muted"
+          <button
+            type="button"
+            onClick={() =>
+              setPanel({
+                mode: "create",
+                addressLine: selected.displayName,
+                lat: selected.lat,
+                lng: selected.lng,
+              })
+            }
+            className="inline-flex items-center gap-1 rounded-lg bg-forest-700 px-3 py-2 text-sm font-medium text-white hover:bg-forest-800"
           >
-            <Plus size={14} /> Add as property
-          </Link>
+            <Ruler size={14} /> Measure & save property
+          </button>
         )}
       </form>
 
@@ -180,9 +206,26 @@ export default function PropertiesMap({
                     {p.label} — {p.addressLine}
                     {p.city ? `, ${p.city}` : ""}
                   </p>
-                  <a href={`/properties/${p.id}`} style={{ fontSize: 12 }}>
-                    View property →
-                  </a>
+                  <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                    <a href={`/properties/${p.id}`} style={{ fontSize: 12 }}>
+                      View property →
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setPanel({ mode: "edit", property: p })}
+                      style={{
+                        fontSize: 12,
+                        color: "#235233",
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Edit measurements
+                    </button>
+                  </div>
                 </div>
               </Popup>
             </Marker>
@@ -203,6 +246,23 @@ export default function PropertiesMap({
         <LegendDot color="#6b7280" label="Inactive" />
         <LegendDot color="#dc2626" label="Search result" />
       </div>
+
+      {panel && (
+        <MapMeasurePanel
+          mode={panel.mode}
+          seed={panel.mode === "create" ? panel : undefined}
+          property={panel.mode === "edit" ? panel.property : undefined}
+          customers={customers}
+          onClose={() => setPanel(null)}
+          onSaved={() => {
+            setPanel(null);
+            setSelected(null);
+            setQuery("");
+            setResults([]);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

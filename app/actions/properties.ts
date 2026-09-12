@@ -116,6 +116,51 @@ export async function updateProperty(id: string, formData: FormData) {
   redirect(`/properties/${id}`);
 }
 
+// Used by the /map page's embedded measuring panel: creates or updates a
+// property (optionally creating a brand-new customer first) without
+// redirecting away, so the map stays put and just shows the fresh pin.
+export async function saveMapProperty(
+  formData: FormData
+): Promise<{ propertyId: string; customerId: string; customerName: string }> {
+  let customerId = String(formData.get("customerId") ?? "");
+  const newCustomerName = String(formData.get("newCustomerName") ?? "").trim();
+  let customerName = "";
+
+  if (!customerId && newCustomerName) {
+    const created = await prisma.customer.create({
+      data: { name: newCustomerName, status: "lead", pipelineStage: "new", source: "map" },
+    });
+    customerId = created.id;
+    customerName = created.name;
+  }
+  if (!customerId) {
+    throw new Error("Select an existing customer or enter a name for a new one.");
+  }
+  if (!customerName) {
+    const c = await prisma.customer.findUniqueOrThrow({
+      where: { id: customerId },
+      select: { name: true },
+    });
+    customerName = c.name;
+  }
+
+  const data = propertyDataFromForm(formData);
+  data.customerId = customerId;
+  if (!data.addressLine) throw new Error("Address is required");
+
+  const propertyId = String(formData.get("propertyId") ?? "");
+  const property = propertyId
+    ? await prisma.property.update({ where: { id: propertyId }, data })
+    : await prisma.property.create({ data });
+
+  revalidatePath("/map");
+  revalidatePath("/properties");
+  revalidatePath(`/customers/${customerId}`);
+  if (propertyId) revalidatePath(`/properties/${propertyId}`);
+
+  return { propertyId: property.id, customerId, customerName };
+}
+
 export async function deleteProperty(id: string, customerId: string) {
   await prisma.property.delete({ where: { id } });
   revalidatePath("/properties");

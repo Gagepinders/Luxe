@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Button, StatusBadge } from "@/components/ui";
 import { formatCurrency, formatDate, formatDateShort } from "@/lib/format";
-import { addCustomerNote, deleteCustomer } from "@/app/actions/customers";
+import { addCustomerNote, deleteCustomer, setCustomerStatus, setPipelineStage } from "@/app/actions/customers";
 import { logCall, clearFollowUp } from "@/app/actions/calls";
 import { CALL_OUTCOME_LABELS } from "@/lib/callLogs";
 import CopyButton from "@/components/CopyButton";
+import StatusDropdown from "@/components/StatusDropdown";
+import { CUSTOMER_STATUS_OPTIONS, PIPELINE_STAGE_OPTIONS } from "@/lib/statusOptions";
 import { Plus, Mail, Phone, Building2, Pencil, Trash2, MapPin, PhoneCall } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -165,8 +167,16 @@ export default async function CustomerDetailPage({
           <section className="card p-5 space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <div className="flex gap-1.5">
-                <StatusBadge status={customer.status} />
-                <StatusBadge status={customer.pipelineStage} />
+                <StatusDropdown
+                  value={customer.status}
+                  options={CUSTOMER_STATUS_OPTIONS}
+                  onChange={setCustomerStatus.bind(null, id)}
+                />
+                <StatusDropdown
+                  value={customer.pipelineStage}
+                  options={PIPELINE_STAGE_OPTIONS}
+                  onChange={setPipelineStage.bind(null, id)}
+                />
               </div>
               <span className="badge bg-surface-muted text-forest-950/70">
                 {customer.type}
