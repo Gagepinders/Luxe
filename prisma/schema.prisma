@@ -245,6 +245,14 @@ model Activity {
   @@index([customerId])
 }
 
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
 model CompanyProfile {
   id          String @id @default("default")
   name        String @default("Luxe Landscape & Snow")

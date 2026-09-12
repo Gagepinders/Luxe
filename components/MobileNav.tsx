@@ -14,8 +14,11 @@ import {
   Route,
   Mail,
   MoreHorizontal,
+  UserCog,
+  LogOut,
   X,
 } from "lucide-react";
+import { logout } from "@/app/actions/auth";
 
 const PRIMARY = [
   { href: "/", label: "Home", icon: LayoutDashboard },
@@ -30,12 +33,14 @@ const MORE = [
   { href: "/quotes", label: "Quotes", icon: FileText },
   { href: "/invoices", label: "Invoices", icon: Receipt },
   { href: "/campaigns", label: "Campaigns", icon: Mail },
+  { href: "/team", label: "Team", icon: UserCog },
 ];
 
 export default function MobileNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const moreActive = MORE.some((item) => pathname.startsWith(item.href));
+  if (pathname === "/login") return null;
 
   return (
     <>
@@ -72,6 +77,15 @@ export default function MobileNav() {
                 );
               })}
             </div>
+            <form action={logout} className="border-t border-white/10 mt-1 pt-1">
+              <button
+                type="submit"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-forest-100/80 hover:bg-forest-800"
+              >
+                <LogOut size={16} />
+                Log out
+              </button>
+            </form>
           </div>
         </div>
       )}

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
+import AppShell from "@/components/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex bg-background">
         <Sidebar />
-        <div className="flex-1 md:pl-60 pb-16 md:pb-0">{children}</div>
+        <AppShell>{children}</AppShell>
         <MobileNav />
       </body>
     </html>

@@ -13,7 +13,10 @@ import {
   Route,
   Mail,
   Leaf,
+  UserCog,
+  LogOut,
 } from "lucide-react";
+import { logout } from "@/app/actions/auth";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -25,10 +28,12 @@ const NAV = [
   { href: "/invoices", label: "Invoices", icon: Receipt },
   { href: "/routes", label: "Routes", icon: Route },
   { href: "/campaigns", label: "Campaigns", icon: Mail },
+  { href: "/team", label: "Team", icon: UserCog },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  if (pathname === "/login") return null;
 
   return (
     <aside className="no-print hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 bg-forest-950 text-forest-50">
@@ -72,6 +77,15 @@ export default function Sidebar() {
         <p>Essex Junction, VT</p>
         <p>(802) 735-7110</p>
       </div>
+      <form action={logout} className="px-3 pb-4">
+        <button
+          type="submit"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-forest-100/80 hover:bg-forest-800 hover:text-white"
+        >
+          <LogOut size={17} />
+          Log out
+        </button>
+      </form>
     </aside>
   );
 }
