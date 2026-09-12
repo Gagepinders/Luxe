@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
 import { formatCurrency } from "@/lib/format";
-import { TrendingUp, Target, PiggyBank, Trophy, type LucideIcon } from "lucide-react";
+import { TrendingUp, Target, PiggyBank, Trophy, Download, type LucideIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +15,18 @@ function monthLabel(key: string) {
   return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 }
 
-export default async function ReportsPage() {
-  const [invoices, quotes, jobs, customers] = await Promise.all([
+const EXPENSE_CATEGORIES = ["material", "fuel", "labor", "equipment", "other"];
+
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ year?: string }>;
+}) {
+  const { year: yearParam } = await searchParams;
+  const currentYear = new Date().getFullYear();
+  const taxYear = yearParam ? Number(yearParam) : currentYear;
+
+  const [invoices, quotes, jobs, customers, yearInvoices, yearExpenses] = await Promise.all([
     prisma.invoice.findMany({
       where: { status: "paid" },
       include: { lineItems: true, customer: { select: { id: true, name: true } } },
@@ -26,9 +37,19 @@ export default async function ReportsPage() {
       include: { expenses: true },
     }),
     prisma.customer.count(),
+    prisma.invoice.findMany({
+      where: {
+        status: "paid",
+        paidAt: { gte: new Date(taxYear, 0, 1), lt: new Date(taxYear + 1, 0, 1) },
+      },
+      include: { lineItems: true },
+    }),
+    prisma.jobExpense.findMany({
+      where: { createdAt: { gte: new Date(taxYear, 0, 1), lt: new Date(taxYear + 1, 0, 1) } },
+    }),
   ]);
 
-  const invoiceTotal = (inv: (typeof invoices)[number]) =>
+  const invoiceTotal = (inv: { lineItems: { quantity: number; unitPrice: number }[] }) =>
     inv.lineItems.reduce((s, li) => s + li.quantity * li.unitPrice, 0);
   const quoteTotal = (q: (typeof quotes)[number]) =>
     q.lineItems.reduce((s, li) => s + li.quantity * li.unitPrice, 0);
@@ -80,6 +101,16 @@ export default async function ReportsPage() {
   const topCustomers = Array.from(revenueByCustomer.values())
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
+
+  // Simple tax-year summary: revenue actually collected vs. logged job
+  // expenses, for handing to an accountant or plugging into tax software.
+  const yearRevenue = yearInvoices.reduce((s, inv) => s + invoiceTotal(inv), 0);
+  const yearExpenseTotal = yearExpenses.reduce((s, e) => s + e.amount, 0);
+  const expensesByCategory = EXPENSE_CATEGORIES.map((cat) => ({
+    category: cat,
+    total: yearExpenses.filter((e) => e.category === cat).reduce((s, e) => s + e.amount, 0),
+  })).filter((c) => c.total > 0);
+  const yearOptions = [currentYear, currentYear - 1, currentYear - 2];
 
   return (
     <main className="p-6 md:p-8">
@@ -147,6 +178,75 @@ export default async function ReportsPage() {
           <p className="mt-4 text-xs text-forest-950/40">{customers} total customers</p>
         </section>
       </div>
+
+      <section className="card p-5 mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 className="font-semibold text-forest-950">Tax &amp; accounting — {taxYear}</h2>
+          <div className="flex gap-1.5">
+            {yearOptions.map((y) => (
+              <Link
+                key={y}
+                href={`/reports?year=${y}`}
+                className={`rounded-full border px-2.5 py-1 text-xs ${
+                  y === taxYear
+                    ? "border-forest-700 bg-forest-700/10 text-forest-700"
+                    : "border-border-subtle text-forest-950/60 hover:bg-surface-muted"
+                }`}
+              >
+                {y}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-4 mb-5">
+          <div>
+            <p className="text-xs text-forest-950/50 uppercase tracking-wide">Revenue collected</p>
+            <p className="text-xl font-semibold text-forest-950">{formatCurrency(yearRevenue)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-forest-950/50 uppercase tracking-wide">Job expenses</p>
+            <p className="text-xl font-semibold text-forest-950">{formatCurrency(yearExpenseTotal)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-forest-950/50 uppercase tracking-wide">Net</p>
+            <p className="text-xl font-semibold text-forest-950">
+              {formatCurrency(yearRevenue - yearExpenseTotal)}
+            </p>
+          </div>
+        </div>
+
+        {expensesByCategory.length > 0 && (
+          <div className="mb-5">
+            <p className="text-xs text-forest-950/50 uppercase tracking-wide mb-2">
+              Expenses by category
+            </p>
+            <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+              {expensesByCategory.map((c) => (
+                <li key={c.category} className="flex justify-between capitalize text-forest-950/80">
+                  <span>{c.category}</span>
+                  <span className="font-medium">{formatCurrency(c.total)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={`/api/export/invoices?year=${taxYear}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+          >
+            <Download size={13} /> Download paid invoices (CSV)
+          </a>
+          <a
+            href={`/api/export/expenses?year=${taxYear}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+          >
+            <Download size={13} /> Download job expenses (CSV)
+          </a>
+        </div>
+      </section>
     </main>
   );
 }
