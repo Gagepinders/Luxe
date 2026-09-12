@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-export type { Measurement } from "@/components/PropertyMap";
+export type { Measurement, MeasurementType } from "@/components/PropertyMap";
 
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
   ssr: false,

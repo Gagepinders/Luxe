@@ -152,11 +152,19 @@ export default async function CustomerDetailPage({
         <div className="space-y-6">
           <section className="card p-5 space-y-3 text-sm">
             <div className="flex items-center justify-between">
-              <StatusBadge status={customer.status} />
+              <div className="flex gap-1.5">
+                <StatusBadge status={customer.status} />
+                <StatusBadge status={customer.pipelineStage} />
+              </div>
               <span className="badge bg-surface-muted text-forest-950/70">
                 {customer.type}
               </span>
             </div>
+            {customer.source && (
+              <p className="text-xs text-forest-950/50">
+                Source: <span className="text-forest-950/70">{customer.source}</span>
+              </p>
+            )}
             {customer.phone && (
               <p className="flex items-center gap-2 text-forest-950/80">
                 <Phone size={14} /> {customer.phone}

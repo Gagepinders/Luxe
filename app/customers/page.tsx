@@ -98,6 +98,7 @@ export default async function CustomersPage({
                 <th className="px-4 py-3 hidden sm:table-cell">Contact</th>
                 <th className="px-4 py-3 hidden md:table-cell">Properties</th>
                 <th className="px-4 py-3 hidden md:table-cell">Won quotes</th>
+                <th className="px-4 py-3 hidden lg:table-cell">Pipeline</th>
                 <th className="px-4 py-3">Status</th>
               </tr>
             </thead>
@@ -135,6 +136,9 @@ export default async function CustomersPage({
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-forest-950/70">
                       {won}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <StatusBadge status={c.pipelineStage} />
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={c.status} />

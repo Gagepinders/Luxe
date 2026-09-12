@@ -1,9 +1,10 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Polyline, Tooltip } from "react-leaflet";
+import { MapContainer, Marker, Polyline, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { RouteStop } from "@/components/RoutePlanner";
+import MapBaseLayers from "@/components/MapBaseLayers";
 
 function numberedIcon(n: number, color: string) {
   return L.divIcon({
@@ -33,11 +34,17 @@ export default function RouteMap({
 
   return (
     <div className="map-shell" style={{ height: 460 }}>
-      <MapContainer center={center} zoom={12} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapContainer
+        center={center}
+        zoom={12}
+        style={{ height: "100%", width: "100%" }}
+        scrollWheelZoom
+        dragging
+        doubleClickZoom
+        touchZoom
+        maxZoom={21}
+      >
+        <MapBaseLayers />
         <Marker position={depot} icon={depotIcon}>
           <Tooltip>Luxe Landscape & Snow — home base</Tooltip>
         </Marker>

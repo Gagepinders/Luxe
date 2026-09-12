@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader, Button, StatusBadge } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { deleteJob, setJobStatus, duplicateJobToNext } from "@/app/actions/jobs";
-import { Pencil, Trash2, Play, CheckCircle2, XCircle, Repeat } from "lucide-react";
+import { uploadJobPhoto, deleteJobPhoto } from "@/app/actions/jobPhotos";
+import { addJobExpense, deleteJobExpense } from "@/app/actions/jobExpenses";
+import { Pencil, Trash2, Play, CheckCircle2, XCircle, Repeat, Camera, Upload, Receipt } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +18,14 @@ export default async function JobDetailPage({
   const { id } = await params;
   const job = await prisma.job.findUnique({
     where: { id },
-    include: { customer: true, property: true, serviceType: true, quote: true },
+    include: {
+      customer: true,
+      property: true,
+      serviceType: true,
+      quote: true,
+      photos: { orderBy: { createdAt: "desc" } },
+      expenses: { orderBy: { createdAt: "desc" } },
+    },
   });
   if (!job) notFound();
 
@@ -26,6 +35,11 @@ export default async function JobDetailPage({
   const reopen = setJobStatus.bind(null, id, "scheduled");
   const remove = deleteJob.bind(null, id);
   const duplicate = duplicateJobToNext.bind(null, id);
+  const upload = uploadJobPhoto.bind(null, id);
+  const addExpense = addJobExpense.bind(null, id);
+
+  const totalExpenses = job.expenses.reduce((s, e) => s + e.amount, 0);
+  const profit = job.price - totalExpenses;
 
   return (
     <main className="p-6 md:p-8 space-y-6">
@@ -98,6 +112,145 @@ export default async function JobDetailPage({
               </p>
             )}
           </section>
+
+          <section className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="flex items-center gap-2 font-semibold text-forest-950">
+                <Camera size={16} /> Photos
+              </h2>
+            </div>
+            <form action={upload} className="flex flex-wrap items-center gap-2 mb-4">
+              <input
+                type="file"
+                name="photos"
+                accept="image/*"
+                multiple
+                capture="environment"
+                className="flex-1 min-w-[180px] rounded-lg border border-border-subtle bg-surface px-3 py-2 text-xs file:mr-2 file:rounded-md file:border-0 file:bg-forest-100 file:px-2 file:py-1 file:text-xs file:font-medium file:text-forest-700"
+              />
+              <input
+                name="caption"
+                placeholder="Caption (optional)"
+                className="w-40 rounded-lg border border-border-subtle bg-surface px-3 py-2 text-xs"
+              />
+              <Button type="submit" size="sm">
+                <Upload size={13} /> Upload
+              </Button>
+            </form>
+            {job.photos.length === 0 ? (
+              <p className="text-sm text-forest-950/50">
+                No photos yet — add before/after shots or note what needs to be done.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {job.photos.map((p) => {
+                  const removePhoto = deleteJobPhoto.bind(null, p.id, id);
+                  return (
+                    <div key={p.id} className="group relative">
+                      <a href={`/api/uploads/${p.filename}`} target="_blank" rel="noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`/api/uploads/${p.filename}`}
+                          alt={p.caption ?? "Job photo"}
+                          className="h-28 w-full rounded-lg border border-border-subtle object-cover"
+                        />
+                      </a>
+                      {p.caption && (
+                        <p className="mt-1 text-xs text-forest-950/60 truncate">{p.caption}</p>
+                      )}
+                      <form action={removePhoto} className="absolute top-1 right-1">
+                        <button
+                          type="submit"
+                          className="rounded-full bg-black/60 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </form>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-forest-950">Job costing</h2>
+              <span
+                className={`text-sm font-semibold ${profit >= 0 ? "text-success" : "text-danger"}`}
+              >
+                {formatCurrency(profit)} profit
+              </span>
+            </div>
+            <form action={addExpense} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+              <input
+                name="description"
+                placeholder="Description"
+                required
+                className="col-span-2 sm:col-span-1 rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-xs"
+              />
+              <select
+                name="category"
+                className="rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-xs"
+                defaultValue="material"
+              >
+                <option value="material">Material</option>
+                <option value="fuel">Fuel</option>
+                <option value="labor">Labor</option>
+                <option value="equipment">Equipment</option>
+                <option value="other">Other</option>
+              </select>
+              <input
+                name="amount"
+                type="number"
+                step="0.01"
+                placeholder="Amount"
+                required
+                className="rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-xs"
+              />
+              <Button type="submit" size="sm">
+                Add
+              </Button>
+            </form>
+            {job.expenses.length === 0 ? (
+              <p className="text-sm text-forest-950/50">
+                No expenses logged. Price: {formatCurrency(job.price)}
+              </p>
+            ) : (
+              <>
+                <ul className="space-y-1.5 mb-2">
+                  {job.expenses.map((e) => {
+                    const removeExpense = deleteJobExpense.bind(null, e.id, id);
+                    return (
+                      <li
+                        key={e.id}
+                        className="flex items-center justify-between text-sm border-b border-border-subtle pb-1.5"
+                      >
+                        <span className="text-forest-950/80">
+                          {e.description}{" "}
+                          <span className="badge bg-surface-muted text-forest-950/50 ml-1">
+                            {e.category}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-2">
+                          {formatCurrency(e.amount)}
+                          <form action={removeExpense}>
+                            <button type="submit" className="text-forest-950/30 hover:text-danger">
+                              <Trash2 size={12} />
+                            </button>
+                          </form>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="flex justify-between text-xs text-forest-950/60">
+                  <span>Price: {formatCurrency(job.price)}</span>
+                  <span>Expenses: {formatCurrency(totalExpenses)}</span>
+                </div>
+              </>
+            )}
+          </section>
         </div>
 
         <div className="space-y-3">
@@ -138,6 +291,13 @@ export default async function JobDetailPage({
                 </Button>
               </form>
             )}
+            <Button
+              href={`/invoices/new?customerId=${job.customerId}&jobId=${id}`}
+              variant="secondary"
+              className="w-full"
+            >
+              <Receipt size={14} /> Create invoice
+            </Button>
           </section>
         </div>
       </div>

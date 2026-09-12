@@ -11,6 +11,7 @@ type MapPayload = {
   lawnSqft: number;
   driveSqft: number;
   walkwaySqft: number;
+  mulchSqft: number;
   totalAcres: number;
 };
 
@@ -23,6 +24,7 @@ function parseMapPayload(raw: FormDataEntryValue | null): MapPayload {
       lawnSqft: 0,
       driveSqft: 0,
       walkwaySqft: 0,
+      mulchSqft: 0,
       totalAcres: 0,
     };
   }
@@ -36,6 +38,7 @@ function parseMapPayload(raw: FormDataEntryValue | null): MapPayload {
       lawnSqft: 0,
       driveSqft: 0,
       walkwaySqft: 0,
+      mulchSqft: 0,
       totalAcres: 0,
     };
   }
@@ -47,14 +50,25 @@ function propertyDataFromForm(formData: FormData) {
     map.measurements.length > 0
       ? JSON.stringify({
           type: "FeatureCollection",
-          features: map.measurements.map((m) => ({
-            type: "Feature",
-            properties: { label: m.label, type: m.type, sqft: m.sqft },
-            geometry: {
-              type: "Polygon",
-              coordinates: [m.points.map((p) => [p[1], p[0]])],
-            },
-          })),
+          features: map.measurements.map((m) =>
+            m.type === "obstacle"
+              ? {
+                  type: "Feature",
+                  properties: { label: m.label, type: m.type, sqft: m.sqft },
+                  geometry: {
+                    type: "Point",
+                    coordinates: [m.points[0][1], m.points[0][0]],
+                  },
+                }
+              : {
+                  type: "Feature",
+                  properties: { label: m.label, type: m.type, sqft: m.sqft },
+                  geometry: {
+                    type: "Polygon",
+                    coordinates: [m.points.map((p) => [p[1], p[0]])],
+                  },
+                }
+          ),
         })
       : null;
 
@@ -70,6 +84,7 @@ function propertyDataFromForm(formData: FormData) {
     lawnSqft: map.lawnSqft || null,
     driveSqft: map.driveSqft || null,
     walkwaySqft: map.walkwaySqft || null,
+    mulchSqft: map.mulchSqft || null,
     totalAcres: map.totalAcres || null,
     boundaryGeoJson,
     measurements: JSON.stringify(map.measurements),

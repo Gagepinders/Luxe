@@ -1,4 +1,4 @@
-import { Field, inputClass, Button } from "@/components/ui";
+import { Field, FieldGroup, inputClass, Button } from "@/components/ui";
 import PropertyMap, { type Measurement } from "@/components/PropertyMapField";
 
 type Customer = { id: string; name: string };
@@ -94,14 +94,14 @@ export default function PropertyForm({
         </Field>
       </div>
 
-      <Field label="Measure the property" hint="Set the pin, then trace lawn / driveway / walkway areas.">
+      <FieldGroup label="Measure the property" hint="Set the pin, then trace lawn / driveway / walkway areas.">
         <PropertyMap
           initialLat={property?.lat ?? 0}
           initialLng={property?.lng ?? 0}
           initialMeasurements={initialMeasurements}
           hiddenInputName="mapPayload"
         />
-      </Field>
+      </FieldGroup>
 
       <div className="grid sm:grid-cols-2 gap-4">
         <Field label="Gate code / access" hint="Shared with crew on job sheets">

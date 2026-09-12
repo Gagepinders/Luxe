@@ -28,8 +28,6 @@ export type RouteStop = {
   status: string;
 };
 
-const DEPOT: [number, number] = [44.4759, -73.2121]; // Burlington, VT — company home base
-
 function haversine(a: [number, number], b: [number, number]) {
   const R = 6371;
   const dLat = ((b[0] - a[0]) * Math.PI) / 180;
@@ -41,10 +39,10 @@ function haversine(a: [number, number], b: [number, number]) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-function nearestNeighborOrder(stops: RouteStop[]): RouteStop[] {
+function nearestNeighborOrder(stops: RouteStop[], depot: [number, number]): RouteStop[] {
   const remaining = [...stops];
   const ordered: RouteStop[] = [];
-  let current: [number, number] = DEPOT;
+  let current: [number, number] = depot;
   while (remaining.length > 0) {
     let bestIdx = 0;
     let bestDist = Infinity;
@@ -65,9 +63,11 @@ function nearestNeighborOrder(stops: RouteStop[]): RouteStop[] {
 export default function RoutePlanner({
   stops,
   missingCount,
+  depot,
 }: {
   stops: RouteStop[];
   missingCount: number;
+  depot: [number, number];
 }) {
   const [order, setOrder] = useState<RouteStop[]>(stops);
   const [pending, startTransition] = useTransition();
@@ -75,13 +75,13 @@ export default function RoutePlanner({
 
   const totalDistance = useMemo(() => {
     let dist = 0;
-    let current = DEPOT;
+    let current = depot;
     for (const s of order) {
       dist += haversine(current, [s.lat, s.lng]);
       current = [s.lat, s.lng];
     }
     return dist;
-  }, [order]);
+  }, [order, depot]);
 
   const totalValue = order.reduce((s, o) => s + o.price, 0);
 
@@ -95,7 +95,7 @@ export default function RoutePlanner({
   }
 
   function optimize() {
-    setOrder(nearestNeighborOrder(order));
+    setOrder(nearestNeighborOrder(order, depot));
     setSaved(false);
   }
 
@@ -109,7 +109,7 @@ export default function RoutePlanner({
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-3">
-        <RouteMap stops={order} depot={DEPOT} />
+        <RouteMap stops={order} depot={depot} />
         {missingCount > 0 && (
           <p className="text-xs text-warning bg-warning-100 rounded-lg px-3 py-2">
             {missingCount} job{missingCount === 1 ? "" : "s"} today have no property location set and

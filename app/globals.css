@@ -77,7 +77,13 @@ body {
 .card {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 0.75rem;
+  border-radius: 0.875rem;
+  box-shadow: 0 1px 2px rgba(13, 31, 20, 0.04), 0 1px 1px rgba(13, 31, 20, 0.03);
+}
+
+a.card:hover, button.card:hover {
+  border-color: color-mix(in srgb, var(--brand-forest-500) 35%, var(--border-subtle));
+  box-shadow: 0 4px 14px rgba(13, 31, 20, 0.08);
 }
 
 .badge {
@@ -102,4 +108,18 @@ input, select, textarea {
   border-radius: 0.75rem;
   overflow: hidden;
   border: 1px solid var(--border-subtle);
+}
+
+/* Print-friendly invoices: hide chrome, show only .printable */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .printable {
+    box-shadow: none !important;
+    border: none !important;
+  }
 }

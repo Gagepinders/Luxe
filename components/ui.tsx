@@ -29,6 +29,7 @@ export function Button({
   onClick,
   className = "",
   size = "md",
+  disabled = false,
 }: {
   children: ReactNode;
   href?: string;
@@ -37,6 +38,7 @@ export function Button({
   onClick?: () => void;
   className?: string;
   size?: "sm" | "md";
+  disabled?: boolean;
 }) {
   const base =
     "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors whitespace-nowrap";
@@ -48,7 +50,8 @@ export function Button({
     ghost: "text-forest-950/70 hover:bg-surface-muted",
     danger: "bg-danger text-white hover:bg-danger/90",
   };
-  const cls = `${base} ${sizes} ${variants[variant]} ${className}`;
+  const disabledCls = disabled ? "opacity-50 pointer-events-none" : "";
+  const cls = `${base} ${sizes} ${variants[variant]} ${disabledCls} ${className}`;
 
   if (href) {
     return (
@@ -58,7 +61,7 @@ export function Button({
     );
   }
   return (
-    <button type={type} onClick={onClick} className={cls}>
+    <button type={type} onClick={onClick} disabled={disabled} className={cls}>
       {children}
     </button>
   );
@@ -76,6 +79,14 @@ const STATUS_STYLES: Record<string, string> = {
   active: "bg-success-100 text-success",
   inactive: "bg-surface-muted text-forest-950/50",
   lead: "bg-gold-100 text-gold-600",
+  new: "bg-surface-muted text-forest-950/70",
+  contacted: "bg-ice-100 text-ice-600",
+  estimate_scheduled: "bg-gold-100 text-gold-600",
+  estimate_sent: "bg-gold-100 text-gold-600",
+  paid: "bg-success-100 text-success",
+  overdue: "bg-danger-100 text-danger",
+  sending: "bg-warning-100 text-warning",
+  failed: "bg-danger-100 text-danger",
 };
 
 export function StatusBadge({ status }: { status: string }) {
@@ -120,6 +131,28 @@ export function Field({
       <div className="mt-1">{children}</div>
       {hint && <span className="text-xs text-forest-950/50">{hint}</span>}
     </label>
+  );
+}
+
+// Same layout as Field, but without the wrapping <label>. Use this when children
+// contain their own interactive controls (buttons, a map toolbar, etc.) — wrapping
+// multiple labelable elements in one <label> makes the browser forward every click
+// inside it to the first one, which silently "clicks" buttons the user never touched.
+export function FieldGroup({
+  label,
+  children,
+  hint,
+}: {
+  label: string;
+  children: ReactNode;
+  hint?: string;
+}) {
+  return (
+    <div className="block text-sm">
+      <span className="font-medium text-forest-950/80">{label}</span>
+      <div className="mt-1">{children}</div>
+      {hint && <span className="text-xs text-forest-950/50">{hint}</span>}
+    </div>
   );
 }
 

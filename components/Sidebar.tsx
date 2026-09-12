@@ -4,28 +4,34 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Kanban,
   Users,
   MapPinned,
   FileText,
   CalendarClock,
+  Receipt,
   Route,
+  Mail,
   Leaf,
 } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/properties", label: "Properties", icon: MapPinned },
   { href: "/quotes", label: "Quotes", icon: FileText },
   { href: "/jobs", label: "Jobs", icon: CalendarClock },
+  { href: "/invoices", label: "Invoices", icon: Receipt },
   { href: "/routes", label: "Routes", icon: Route },
+  { href: "/campaigns", label: "Campaigns", icon: Mail },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 bg-forest-950 text-forest-50">
+    <aside className="no-print hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 bg-forest-950 text-forest-50">
       <div className="flex items-center gap-2 px-5 py-5 border-b border-white/10">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold-500 text-forest-950">
           <Leaf size={20} strokeWidth={2.5} />
@@ -40,7 +46,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV.map((item) => {
           const active =
             item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -63,7 +69,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="px-4 py-4 border-t border-white/10 text-[11px] text-forest-100/60">
-        <p>Chittenden County, VT</p>
+        <p>Essex Junction, VT</p>
         <p>(802) 735-7110</p>
       </div>
     </aside>

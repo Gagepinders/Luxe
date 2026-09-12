@@ -24,6 +24,8 @@ model Customer {
   phone       String?
   type        String   @default("residential") // residential | commercial
   status      String   @default("active") // active | inactive | lead
+  pipelineStage String @default("new") // new | contacted | estimate_scheduled | estimate_sent | won | lost
+  source      String? // how they heard about us: referral, google, website, etc.
   tags        String? // comma separated
   notes       String?
   createdAt   DateTime @default(now())
@@ -32,9 +34,11 @@ model Customer {
   properties Property[]
   quotes     Quote[]
   jobs       Job[]
+  invoices   Invoice[]
   activities Activity[]
 
   @@index([name])
+  @@index([pipelineStage])
 }
 
 model Property {
@@ -53,6 +57,7 @@ model Property {
   lawnSqft      Float?
   driveSqft     Float?
   walkwaySqft   Float?
+  mulchSqft     Float?
   totalAcres    Float?
   boundaryGeoJson String? // GeoJSON polygon(s) captured from the measuring tool
   measurements  String?  // JSON array of {label, type, sqft} for multiple measured areas
@@ -148,10 +153,85 @@ model Job {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  photos   JobPhoto[]
+  expenses JobExpense[]
+  invoices Invoice[]
+
   @@index([customerId])
   @@index([propertyId])
   @@index([scheduledDate])
   @@index([status])
+}
+
+model JobPhoto {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  filename  String // stored filename on the uploads volume
+  caption   String?
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+}
+
+model JobExpense {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  description String
+  category    String   @default("material") // material | fuel | labor | equipment | other
+  amount      Float
+  createdAt   DateTime @default(now())
+
+  @@index([jobId])
+}
+
+model Invoice {
+  id         String    @id @default(cuid())
+  number     Int       @default(0)
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  jobId      String?
+  job        Job?      @relation(fields: [jobId], references: [id])
+
+  status   String    @default("draft") // draft | sent | paid | overdue
+  issuedAt DateTime  @default(now())
+  dueAt    DateTime?
+  paidAt   DateTime?
+  notes    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lineItems InvoiceLineItem[]
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model InvoiceLineItem {
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  description String
+  quantity    Float  @default(1)
+  unit        String @default("visit")
+  unitPrice   Float  @default(0)
+  sortOrder   Int    @default(0)
+}
+
+model EmailCampaign {
+  id             String    @id @default(cuid())
+  subject        String
+  body           String
+  audience       String    @default("all") // all | active | lead | won | lost | pipeline:<stage> | tag:<tag>
+  status         String    @default("draft") // draft | sending | sent | failed
+  recipientCount Int       @default(0)
+  errorMessage   String?
+  sentAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model Activity {
@@ -171,6 +251,12 @@ model CompanyProfile {
   tagline     String @default("Dependable Property Care for Homes in Chittenden County")
   phone       String @default("+1-802-735-7110")
   email       String @default("Luxelandscapevt@gmail.com")
+  addressLine String @default("16 Oakwood Lane")
+  city        String @default("Essex Junction")
+  state       String @default("VT")
+  zip         String @default("05452")
+  lat         Float  @default(44.5063689)
+  lng         Float  @default(-73.0590180)
   serviceArea String @default("Chittenden County, VT — Burlington, Essex Junction, Williston & surrounding")
   website     String @default("luxelandscapevt.com")
 }

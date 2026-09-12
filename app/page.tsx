@@ -1,9 +1,23 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getCompanyProfile } from "@/lib/companyProfile";
 import { PageHeader, StatusBadge, Button } from "@/components/ui";
 import { formatCurrency, formatDateShort } from "@/lib/format";
+import WeatherWidget from "@/components/WeatherWidget";
 import { startOfMonth, endOfMonth, startOfDay, endOfDay, addDays } from "date-fns";
-import { Plus, ArrowRight } from "lucide-react";
+import {
+  Plus,
+  ArrowRight,
+  DollarSign,
+  Target,
+  TrendingUp,
+  CheckCircle2,
+  Receipt,
+  AlertTriangle,
+  Repeat,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +41,13 @@ export default async function Dashboard() {
     recentQuotes,
     recurringJobs,
     customerCount,
+    invoicesAll,
+    company,
   ] = await Promise.all([
     prisma.quote.findMany({ include: { lineItems: true } }),
     prisma.job.findMany({
       where: { scheduledDate: { gte: monthStart, lte: monthEnd } },
+      include: { expenses: true },
     }),
     prisma.job.findMany({
       where: {
@@ -48,6 +65,8 @@ export default async function Dashboard() {
     }),
     prisma.job.findMany({ where: { recurrence: { not: "none" } } }),
     prisma.customer.count(),
+    prisma.invoice.findMany({ include: { lineItems: true } }),
+    getCompanyProfile(),
   ]);
 
   const total = (q: { lineItems: { quantity: number; unitPrice: number }[] }) =>
@@ -65,8 +84,18 @@ export default async function Dashboard() {
   const overdueQuotes = quotesAll.filter(
     (q) => q.status === "sent" && q.validUntil && q.validUntil < now
   );
+  const overdueInvoices = invoicesAll.filter(
+    (i) => i.status === "sent" && i.dueAt && i.dueAt < now
+  );
+
+  const outstandingInvoices = invoicesAll
+    .filter((i) => i.status === "sent" || overdueInvoices.includes(i))
+    .reduce((s, i) => s + total(i), 0);
 
   const jobsCompletedThisMonth = jobsThisMonth.filter((j) => j.status === "completed").length;
+  const profitThisMonth = jobsThisMonth
+    .filter((j) => j.status === "completed")
+    .reduce((s, j) => s + (j.price - j.expenses.reduce((e, x) => e + x.amount, 0)), 0);
 
   const recurringMonthlyValue = recurringJobs.reduce((s, j) => {
     const multiplier = j.recurrence === "weekly" ? 4.33 : j.recurrence === "biweekly" ? 2.17 : j.recurrence === "monthly" ? 1 : 0;
@@ -83,7 +112,7 @@ export default async function Dashboard() {
     <main className="p-6 md:p-8 space-y-6">
       <PageHeader
         title="Dashboard"
-        subtitle="Luxe Landscape & Snow — Chittenden County, VT"
+        subtitle={`${company.name} — ${company.city}, ${company.state}`}
         action={
           <div className="flex gap-2">
             <Button href="/quotes/new" variant="secondary">
@@ -96,18 +125,23 @@ export default async function Dashboard() {
         }
       />
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatTile label="Won revenue (mo.)" value={formatCurrency(wonRevenueThisMonth)} />
-        <StatTile label="Win rate" value={`${winRate.toFixed(0)}%`} />
-        <StatTile label="Jobs completed (mo.)" value={String(jobsCompletedThisMonth)} />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StatTile icon={DollarSign} label="Won revenue (mo.)" value={formatCurrency(wonRevenueThisMonth)} />
+        <StatTile icon={Target} label="Win rate" value={`${winRate.toFixed(0)}%`} />
+        <StatTile icon={TrendingUp} label="Profit (mo.)" value={formatCurrency(profitThisMonth)} />
+        <StatTile icon={CheckCircle2} label="Jobs completed (mo.)" value={String(jobsCompletedThisMonth)} />
+        <StatTile icon={Receipt} label="Outstanding invoices" value={formatCurrency(outstandingInvoices)} />
         <StatTile
-          label="Overdue quotes"
-          value={String(overdueQuotes.length)}
-          tone={overdueQuotes.length > 0 ? "warning" : undefined}
+          icon={AlertTriangle}
+          label="Overdue (quotes + inv.)"
+          value={String(overdueQuotes.length + overdueInvoices.length)}
+          tone={overdueQuotes.length + overdueInvoices.length > 0 ? "warning" : undefined}
         />
-        <StatTile label="Recurring rev. (mo. est.)" value={formatCurrency(recurringMonthlyValue)} />
-        <StatTile label="Customers" value={String(customerCount)} />
+        <StatTile icon={Repeat} label="Recurring rev. (mo. est.)" value={formatCurrency(recurringMonthlyValue)} />
+        <StatTile icon={Users} label="Customers" value={String(customerCount)} />
       </div>
+
+      <WeatherWidget lat={company.lat} lng={company.lng} />
 
       <div className="grid lg:grid-cols-3 gap-6">
         <section className="card p-5 lg:col-span-2">
@@ -166,10 +200,10 @@ export default async function Dashboard() {
             ))}
           </div>
           <Link
-            href="/quotes"
+            href="/pipeline"
             className="mt-4 inline-flex items-center gap-1 text-xs text-forest-700 hover:underline"
           >
-            View all quotes <ArrowRight size={12} />
+            View sales pipeline <ArrowRight size={12} />
           </Link>
         </section>
       </div>
@@ -204,17 +238,28 @@ export default async function Dashboard() {
 }
 
 function StatTile({
+  icon: Icon,
   label,
   value,
   tone,
 }: {
+  icon: LucideIcon;
   label: string;
   value: string;
   tone?: "warning";
 }) {
   return (
     <div className="card p-4">
-      <p className="text-xs text-forest-950/50 uppercase tracking-wide">{label}</p>
+      <div className="flex items-center gap-2 mb-1">
+        <span
+          className={`flex h-6 w-6 items-center justify-center rounded-md ${
+            tone === "warning" ? "bg-warning-100 text-warning" : "bg-forest-100 text-forest-700"
+          }`}
+        >
+          <Icon size={13} />
+        </span>
+        <p className="text-xs text-forest-950/50 uppercase tracking-wide">{label}</p>
+      </div>
       <p className={`text-xl font-semibold ${tone === "warning" ? "text-warning" : "text-forest-950"}`}>
         {value}
       </p>

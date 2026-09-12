@@ -86,10 +86,28 @@ export default async function PropertyDetailPage({
                 <p className="font-medium">{formatSqft(property.walkwaySqft)}</p>
               </div>
               <div>
+                <p className="text-xs text-forest-950/50">Mulch beds</p>
+                <p className="font-medium">{formatSqft(property.mulchSqft)}</p>
+              </div>
+              <div>
                 <p className="text-xs text-forest-950/50">Total acres</p>
                 <p className="font-medium">{property.totalAcres?.toFixed(2) ?? "—"}</p>
               </div>
             </div>
+            {measurements.some((m) => m.type === "obstacle") && (
+              <div className="pt-2 border-t border-border-subtle">
+                <p className="text-xs text-forest-950/50 mb-1">Obstacles</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {measurements
+                    .filter((m) => m.type === "obstacle")
+                    .map((m) => (
+                      <span key={m.id} className="badge bg-danger-100 text-danger">
+                        {m.label}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            )}
             {(property.gateCode || property.hazards || property.accessNotes) && (
               <div className="pt-2 border-t border-border-subtle space-y-1">
                 {property.gateCode && (

@@ -8,6 +8,8 @@ type Customer = {
   phone: string | null;
   type: string;
   status: string;
+  pipelineStage: string;
+  source: string | null;
   tags: string | null;
   notes: string | null;
 };
@@ -15,9 +17,11 @@ type Customer = {
 export default function CustomerForm({
   action,
   customer,
+  defaultStage,
 }: {
   action: (formData: FormData) => void;
   customer?: Customer;
+  defaultStage?: string;
 }) {
   return (
     <form action={action} className="card p-5 space-y-4 max-w-2xl">
@@ -76,6 +80,28 @@ export default function CustomerForm({
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+        </Field>
+        <Field label="Pipeline stage">
+          <select
+            name="pipelineStage"
+            defaultValue={customer?.pipelineStage ?? defaultStage ?? "new"}
+            className={inputClass}
+          >
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="estimate_scheduled">Estimate Scheduled</option>
+            <option value="estimate_sent">Estimate Sent</option>
+            <option value="won">Won</option>
+            <option value="lost">Lost</option>
+          </select>
+        </Field>
+        <Field label="How did they hear about you?" hint="Optional">
+          <input
+            name="source"
+            defaultValue={customer?.source ?? ""}
+            className={inputClass}
+            placeholder="Referral, Google, website…"
+          />
         </Field>
       </div>
       <Field label="Tags (comma separated)" hint="e.g. VIP, snow-plan, mowing-weekly">

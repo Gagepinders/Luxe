@@ -72,6 +72,13 @@ export async function createQuote(formData: FormData) {
     },
   });
 
+  // Drafting a quote means at least a conversation happened.
+  await prisma.customer.updateMany({
+    where: { id: customerId, pipelineStage: "new" },
+    data: { pipelineStage: "estimate_scheduled" },
+  });
+
+  revalidatePath("/pipeline");
   revalidatePath("/quotes");
   revalidatePath(`/customers/${customerId}`);
   redirect(`/quotes/${quote.id}`);
@@ -151,9 +158,27 @@ export async function setQuoteStatus(
     },
   });
 
+  // Keep the sales pipeline in sync with the quote's outcome.
+  const pipelineByStatus: Record<string, string> = {
+    sent: "estimate_sent",
+    won: "won",
+    lost: "lost",
+  };
+  const nextStage = pipelineByStatus[status];
+  if (nextStage) {
+    await prisma.customer.update({
+      where: { id: quote.customerId },
+      data: {
+        pipelineStage: nextStage,
+        status: status === "won" ? "active" : undefined,
+      },
+    });
+  }
+
   revalidatePath("/quotes");
   revalidatePath(`/quotes/${id}`);
   revalidatePath(`/customers/${quote.customerId}`);
+  revalidatePath("/pipeline");
   redirect(`/quotes/${id}`);
 }
 

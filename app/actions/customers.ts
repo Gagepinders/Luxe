@@ -11,6 +11,8 @@ export type CustomerInput = {
   phone?: string;
   type: string;
   status: string;
+  pipelineStage: string;
+  source?: string;
   tags?: string;
   notes?: string;
 };
@@ -23,6 +25,8 @@ function parseCustomerForm(formData: FormData): CustomerInput {
     phone: String(formData.get("phone") ?? "").trim() || undefined,
     type: String(formData.get("type") ?? "residential"),
     status: String(formData.get("status") ?? "active"),
+    pipelineStage: String(formData.get("pipelineStage") ?? "new"),
+    source: String(formData.get("source") ?? "").trim() || undefined,
     tags: String(formData.get("tags") ?? "").trim() || undefined,
     notes: String(formData.get("notes") ?? "").trim() || undefined,
   };
@@ -60,4 +64,31 @@ export async function addCustomerNote(id: string, formData: FormData) {
     data: { customerId: id, type: "note", body },
   });
   revalidatePath(`/customers/${id}`);
+}
+
+const PIPELINE_STAGES = [
+  "new",
+  "contacted",
+  "estimate_scheduled",
+  "estimate_sent",
+  "won",
+  "lost",
+];
+
+export async function setPipelineStage(id: string, stage: string) {
+  if (!PIPELINE_STAGES.includes(stage)) throw new Error("Invalid pipeline stage");
+  const customer = await prisma.customer.update({
+    where: { id },
+    data: { pipelineStage: stage },
+  });
+  await prisma.activity.create({
+    data: {
+      customerId: id,
+      type: "status_change",
+      body: `Moved to pipeline stage "${stage.replace("_", " ")}".`,
+    },
+  });
+  revalidatePath("/pipeline");
+  revalidatePath(`/customers/${id}`);
+  return customer;
 }

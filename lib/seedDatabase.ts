@@ -51,6 +51,8 @@ export async function seedDatabase(prisma: PrismaClient) {
       phone: "(802) 555-0142",
       type: "residential",
       status: "active",
+      pipelineStage: "won",
+      source: "Referral",
       tags: "VIP, mowing-weekly",
       notes: "Prefers Friday morning visits. Has a small dog in the backyard.",
     },
@@ -79,6 +81,8 @@ export async function seedDatabase(prisma: PrismaClient) {
       phone: "(802) 555-0198",
       type: "residential",
       status: "active",
+      pipelineStage: "won",
+      source: "Google",
       tags: "snow-plan",
     },
   });
@@ -108,6 +112,8 @@ export async function seedDatabase(prisma: PrismaClient) {
       phone: "(802) 555-0164",
       type: "commercial",
       status: "active",
+      pipelineStage: "won",
+      source: "Referral",
       tags: "commercial, snow-plan",
       notes: "Property manager for a small retail plaza. Needs lot plowed before 7am.",
     },
@@ -136,6 +142,8 @@ export async function seedDatabase(prisma: PrismaClient) {
       phone: "(802) 555-0121",
       type: "residential",
       status: "lead",
+      pipelineStage: "estimate_sent",
+      source: "Website",
       tags: "spring-cleanup",
       notes: "Requested a quote via the website contact form.",
     },
@@ -162,6 +170,8 @@ export async function seedDatabase(prisma: PrismaClient) {
       phone: "(802) 555-0177",
       type: "residential",
       status: "active",
+      pipelineStage: "won",
+      source: "Referral",
       tags: "mowing-weekly, hedge-trim",
     },
   });
@@ -189,6 +199,8 @@ export async function seedDatabase(prisma: PrismaClient) {
       phone: "(802) 555-0155",
       type: "commercial",
       status: "inactive",
+      pipelineStage: "lost",
+      source: "Google",
       tags: "commercial",
       notes: "Paused service over winter, revisit in spring.",
     },
@@ -216,6 +228,8 @@ export async function seedDatabase(prisma: PrismaClient) {
       phone: "(802) 555-0133",
       type: "residential",
       status: "lead",
+      pipelineStage: "estimate_sent",
+      source: "Referral",
       tags: "fall-cleanup",
       notes: "Comparing quotes from a couple of companies.",
     },
@@ -232,6 +246,33 @@ export async function seedDatabase(prisma: PrismaClient) {
       lng: -73.1901,
       lawnSqft: 4300,
       totalAcres: 4300 / 43560,
+    },
+  });
+
+  // Fresh leads with no quotes yet — populate the early pipeline stages.
+  await prisma.customer.create({
+    data: {
+      name: "Brian Chu",
+      email: "brian.chu@example.com",
+      phone: "(802) 555-0188",
+      type: "residential",
+      status: "lead",
+      pipelineStage: "new",
+      source: "Google",
+      notes: "Filled out the contact form asking about weekly mowing.",
+    },
+  });
+  await prisma.customer.create({
+    data: {
+      name: "Green Mountain Storage",
+      companyName: "Green Mountain Storage",
+      email: "facilities@gmstoragevt.com",
+      phone: "(802) 555-0142",
+      type: "commercial",
+      status: "lead",
+      pipelineStage: "contacted",
+      source: "Referral",
+      notes: "Called about snow plowing for their facility lot. Site visit needed.",
     },
   });
 

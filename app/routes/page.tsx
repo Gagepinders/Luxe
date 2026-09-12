@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getCompanyProfile } from "@/lib/companyProfile";
 import { PageHeader } from "@/components/ui";
 import RoutePlanner, { type RouteStop } from "@/components/RoutePlanner";
 import { format, addDays } from "date-fns";
@@ -16,14 +17,18 @@ export default async function RoutesPage({
   const dayStart = new Date(`${dayStr}T00:00:00`);
   const dayEnd = new Date(`${dayStr}T23:59:59`);
 
-  const jobs = await prisma.job.findMany({
-    where: {
-      scheduledDate: { gte: dayStart, lte: dayEnd },
-      status: { not: "cancelled" },
-    },
-    include: { customer: true, property: true },
-    orderBy: [{ routeOrder: "asc" }, { createdAt: "asc" }],
-  });
+  const [jobs, company] = await Promise.all([
+    prisma.job.findMany({
+      where: {
+        scheduledDate: { gte: dayStart, lte: dayEnd },
+        status: { not: "cancelled" },
+      },
+      include: { customer: true, property: true },
+      orderBy: [{ routeOrder: "asc" }, { createdAt: "asc" }],
+    }),
+    getCompanyProfile(),
+  ]);
+  const depot: [number, number] = [company.lat, company.lng];
 
   const mapped = jobs.filter((j) => j.property.lat !== null && j.property.lng !== null);
   const missingCount = jobs.length - mapped.length;
@@ -73,7 +78,7 @@ export default async function RoutesPage({
         </Link>
       </div>
 
-      <RoutePlanner stops={stops} missingCount={missingCount} />
+      <RoutePlanner stops={stops} missingCount={missingCount} depot={depot} />
     </main>
   );
 }
