@@ -23,11 +23,17 @@ export default function PropertyForm({
   customers,
   property,
   defaultCustomerId,
+  defaultAddress,
+  defaultLat,
+  defaultLng,
 }: {
   action: (formData: FormData) => void;
   customers: Customer[];
   property?: Property;
   defaultCustomerId?: string;
+  defaultAddress?: string;
+  defaultLat?: number;
+  defaultLng?: number;
 }) {
   let initialMeasurements: Measurement[] = [];
   if (property?.measurements) {
@@ -72,7 +78,7 @@ export default function PropertyForm({
         <input
           name="addressLine"
           required
-          defaultValue={property?.addressLine}
+          defaultValue={property?.addressLine ?? defaultAddress ?? ""}
           className={inputClass}
           placeholder="123 Maple St"
         />
@@ -96,8 +102,8 @@ export default function PropertyForm({
 
       <FieldGroup label="Measure the property" hint="Set the pin, then trace lawn / driveway / walkway areas.">
         <PropertyMap
-          initialLat={property?.lat ?? 0}
-          initialLng={property?.lng ?? 0}
+          initialLat={property?.lat ?? defaultLat ?? 0}
+          initialLng={property?.lng ?? defaultLng ?? 0}
           initialMeasurements={initialMeasurements}
           hiddenInputName="mapPayload"
         />

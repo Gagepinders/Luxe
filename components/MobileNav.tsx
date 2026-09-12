@@ -20,6 +20,7 @@ import {
   Calculator,
   BarChart3,
   Boxes,
+  Map,
   X,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
@@ -34,6 +35,7 @@ const PRIMARY = [
 const MORE = [
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/properties", label: "Properties", icon: MapPinned },
+  { href: "/map", label: "Map", icon: Map },
   { href: "/estimator", label: "Estimator", icon: Calculator },
   { href: "/quotes", label: "Quotes", icon: FileText },
   { href: "/invoices", label: "Invoices", icon: Receipt },

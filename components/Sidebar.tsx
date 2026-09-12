@@ -19,6 +19,7 @@ import {
   Calculator,
   BarChart3,
   Boxes,
+  Map,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 
@@ -27,6 +28,7 @@ const NAV = [
   { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/properties", label: "Properties", icon: MapPinned },
+  { href: "/map", label: "Map", icon: Map },
   { href: "/estimator", label: "Estimator", icon: Calculator },
   { href: "/quotes", label: "Quotes", icon: FileText },
   { href: "/jobs", label: "Jobs", icon: CalendarClock },

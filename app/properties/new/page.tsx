@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function NewPropertyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ customerId?: string }>;
+  searchParams: Promise<{ customerId?: string; address?: string; lat?: string; lng?: string }>;
 }) {
-  const { customerId } = await searchParams;
+  const { customerId, address, lat, lng } = await searchParams;
   const customers = await prisma.customer.findMany({
     orderBy: { name: "asc" },
     select: { id: true, name: true },
@@ -23,6 +23,9 @@ export default async function NewPropertyPage({
         action={createProperty}
         customers={customers}
         defaultCustomerId={customerId}
+        defaultAddress={address}
+        defaultLat={lat ? Number(lat) : undefined}
+        defaultLng={lng ? Number(lng) : undefined}
       />
     </main>
   );
