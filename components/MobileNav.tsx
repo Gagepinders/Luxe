@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { isChromelessPath } from "@/lib/publicPaths";
+import GlobalSearch from "@/components/GlobalSearch";
 
 const PRIMARY = [
   { href: "/", label: "Home", icon: LayoutDashboard },
@@ -73,6 +74,7 @@ export default function MobileNav() {
                 <X size={16} />
               </button>
             </div>
+            <GlobalSearch />
             <div className="grid grid-cols-2 gap-1">
               {MORE.map((item) => {
                 const active = pathname.startsWith(item.href);

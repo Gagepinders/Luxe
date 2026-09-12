@@ -109,6 +109,41 @@ export async function duplicateJobToNext(id: string) {
   redirect(`/jobs/${next.id}`);
 }
 
+// Generates several future occurrences at once instead of clicking "Schedule
+// next occurrence" one at a time. Always chains off this job's own date, so
+// running it twice for an overlapping range will create duplicates — meant
+// for a fresh recurring job that doesn't have future visits scheduled yet.
+export async function generateRecurringJobs(id: string, formData: FormData) {
+  const job = await prisma.job.findUniqueOrThrow({ where: { id } });
+  const days = RECURRENCE_DAYS[job.recurrence] ?? 7;
+  const count = Math.min(52, Math.max(1, Number(formData.get("count")) || 4));
+
+  const data = [];
+  const cursor = new Date(job.scheduledDate);
+  for (let i = 0; i < count; i++) {
+    cursor.setDate(cursor.getDate() + days);
+    data.push({
+      customerId: job.customerId,
+      propertyId: job.propertyId,
+      quoteId: job.quoteId,
+      serviceTypeId: job.serviceTypeId,
+      title: job.title,
+      scheduledDate: new Date(cursor),
+      startTime: job.startTime,
+      endTime: job.endTime,
+      crew: job.crew,
+      price: job.price,
+      recurrence: job.recurrence,
+      notes: job.notes,
+    });
+  }
+  await prisma.job.createMany({ data });
+
+  revalidatePath("/jobs");
+  revalidatePath("/routes");
+  redirect("/jobs");
+}
+
 export async function setJobRouteOrder(orderedIds: string[]) {
   await prisma.$transaction(
     orderedIds.map((id, index) =>

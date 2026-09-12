@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { isChromelessPath } from "@/lib/publicPaths";
+import GlobalSearch from "@/components/GlobalSearch";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -65,6 +66,8 @@ export default function Sidebar() {
           </p>
         </div>
       </div>
+
+      <GlobalSearch />
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV.map((item) => {

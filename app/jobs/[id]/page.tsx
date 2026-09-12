@@ -5,7 +5,13 @@ import { PageHeader, Button } from "@/components/ui";
 import StatusDropdown from "@/components/StatusDropdown";
 import { JOB_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { deleteJob, setJobStatus, duplicateJobToNext, requestReview } from "@/app/actions/jobs";
+import {
+  deleteJob,
+  setJobStatus,
+  duplicateJobToNext,
+  generateRecurringJobs,
+  requestReview,
+} from "@/app/actions/jobs";
 import { uploadJobPhoto, deleteJobPhoto } from "@/app/actions/jobPhotos";
 import { addJobExpense, deleteJobExpense } from "@/app/actions/jobExpenses";
 import { Pencil, Trash2, Play, CheckCircle2, XCircle, Repeat, Camera, Upload, Receipt, Star } from "lucide-react";
@@ -37,6 +43,7 @@ export default async function JobDetailPage({
   const reopen = setJobStatus.bind(null, id, "scheduled");
   const remove = deleteJob.bind(null, id);
   const duplicate = duplicateJobToNext.bind(null, id);
+  const generateBatch = generateRecurringJobs.bind(null, id);
   const sendReviewRequest = requestReview.bind(null, id);
   const upload = uploadJobPhoto.bind(null, id);
   const addExpense = addJobExpense.bind(null, id);
@@ -292,11 +299,32 @@ export default async function JobDetailPage({
               </form>
             )}
             {job.recurrence !== "none" && (
-              <form action={duplicate}>
-                <Button type="submit" variant="secondary" className="w-full">
-                  <Repeat size={14} /> Schedule next occurrence
-                </Button>
-              </form>
+              <>
+                <form action={duplicate}>
+                  <Button type="submit" variant="secondary" className="w-full">
+                    <Repeat size={14} /> Schedule next occurrence
+                  </Button>
+                </form>
+                <form action={generateBatch} className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    name="count"
+                    defaultValue={4}
+                    min={1}
+                    max={52}
+                    className="w-14 rounded-lg border border-border-subtle bg-surface px-2 py-1.5 text-xs"
+                  />
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1"
+                    title="Creates that many future visits at once, spaced by this job's recurrence interval"
+                  >
+                    <Repeat size={14} /> Generate ahead
+                  </Button>
+                </form>
+              </>
             )}
             {job.status === "completed" && (
               <form action={sendReviewRequest}>
