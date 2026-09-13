@@ -24,6 +24,8 @@ import {
   Map,
   Settings,
   X,
+  Sparkles,
+  ListChecks,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { isChromelessPath } from "@/lib/publicPaths";
@@ -31,12 +33,14 @@ import GlobalSearch from "@/components/GlobalSearch";
 
 const PRIMARY = [
   { href: "/", label: "Home", icon: LayoutDashboard },
-  { href: "/pipeline", label: "Pipeline", icon: Kanban },
+  { href: "/agent", label: "Assistant", icon: Sparkles },
   { href: "/jobs", label: "Jobs", icon: CalendarClock },
   { href: "/routes", label: "Routes", icon: Route },
 ];
 
 const MORE = [
+  { href: "/todos", label: "To-Dos", icon: ListChecks },
+  { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/calls", label: "Calls", icon: PhoneCall },
   { href: "/properties", label: "Properties", icon: MapPinned },
