@@ -3,6 +3,8 @@ import fs from "fs/promises";
 import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import heicConvert from "heic-convert";
+import sharp from "sharp";
 import { prisma } from "@/lib/prisma";
 import { getAnthropicClient } from "@/lib/anthropic";
 import { buildAgentTools, type ToolCallSummary } from "@/lib/agentTools";
@@ -40,13 +42,48 @@ Be concise — this is a business owner reading on their phone, often between jo
 
 Reply in plain text only — this chat renders raw text, not markdown, so never use **bold**, #headers, or markdown-style "-"/"*" bullets. For a list, just put each item on its own line (optionally with a number like "1." or an em dash "—"), and use plain words instead of bold for emphasis.`;
 
+// Claude rejects any single image over 10MB, and iPhones routinely produce
+// 8-13MB photos (more once a HEIC gets re-encoded as JPEG below) — plus
+// Claude internally downscales anything past ~1568px on the long edge
+// before it even looks at it, so sending full camera resolution buys
+// nothing but a slower upload and a real chance of hitting that limit.
+const MAX_DIMENSION = 1568;
+
+// iPhones save camera photos as HEIC by default. Claude's vision API only
+// accepts JPEG/PNG/GIF/WEBP — sending HEIC bytes mislabeled as image/jpeg
+// (the old behavior here) gets silently rejected by the API, and HEIC
+// doesn't render in a browser <img> either, so the stored photo would look
+// broken in the chat. Converting up front fixes both, and resizing after
+// (every upload, not just HEIC) keeps every photo well under the size cap.
 async function saveUploadedImage(file: File) {
   const dir = await ensureUploadsDir();
   const ext = safeExtension(file.name);
-  const filename = `${randomBytes(12).toString("hex")}${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
+  let buffer = Buffer.from(await file.arrayBuffer());
+
+  if (ext === ".heic" || ext === ".heif" || file.type === "image/heic" || file.type === "image/heif") {
+    try {
+      const converted = await heicConvert({ buffer, format: "JPEG", quality: 0.9 });
+      buffer = Buffer.from(converted);
+    } catch {
+      throw new Error(
+        "That photo is in a format I couldn't read (HEIC conversion failed). Try taking the photo with your camera set to 'Most Compatible' format, or send a regular JPEG/PNG."
+      );
+    }
+  }
+
+  try {
+    buffer = await sharp(buffer)
+      .rotate() // bake in EXIF orientation — otherwise a sideways phone photo stays sideways
+      .resize(MAX_DIMENSION, MAX_DIMENSION, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+  } catch {
+    throw new Error("Couldn't process that photo — try a different one.");
+  }
+
+  const filename = `${randomBytes(12).toString("hex")}.jpg`;
   await fs.writeFile(path.join(dir, filename), buffer);
-  return { filename, buffer, ext };
+  return { filename, buffer, ext: ".jpg" };
 }
 
 export async function POST(request: NextRequest) {
@@ -63,10 +100,16 @@ export async function POST(request: NextRequest) {
   let imageBuffer: Buffer | null = null;
   let imageMediaType: string | null = null;
   if (hasImage) {
-    const saved = await saveUploadedImage(imageFile as File);
-    imageFilename = saved.filename;
-    imageBuffer = saved.buffer;
-    imageMediaType = IMAGE_MEDIA_TYPES[saved.ext] ?? "image/jpeg";
+    try {
+      const saved = await saveUploadedImage(imageFile as File);
+      imageFilename = saved.filename;
+      imageBuffer = saved.buffer;
+      imageMediaType = IMAGE_MEDIA_TYPES[saved.ext] ?? "image/jpeg";
+    } catch (error) {
+      console.error("[agent/chat] image upload failed:", error);
+      const reply = error instanceof Error ? error.message : "Couldn't process that photo — try a different one.";
+      return NextResponse.json({ reply, toolCalls: [] });
+    }
   }
 
   const history = await prisma.agentMessage.findMany({
@@ -129,6 +172,7 @@ export async function POST(request: NextRequest) {
     replyText = textBlocks.map((b) => b.text).join("\n\n") || "Done.";
   } catch (error) {
     requestFailed = true;
+    console.error("[agent/chat] Claude request failed:", error);
     if (error instanceof Anthropic.AuthenticationError) {
       replyText = "The ANTHROPIC_API_KEY for this deployment looks invalid — check it in Railway.";
     } else if (error instanceof Anthropic.RateLimitError) {
