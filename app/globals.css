@@ -162,6 +162,19 @@ input, select, textarea {
   background: var(--surface);
 }
 
+/* Data table polish, applied wherever a table sits inside a .card — every
+   list page (Customers, Jobs, Quotes, Invoices, …) picks this up for free. */
+.card table thead th {
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.card table tbody tr {
+  transition: background-color 0.15s ease;
+}
+.card table tbody tr:hover {
+  background: color-mix(in srgb, var(--brand-forest-500) 4%, var(--surface));
+}
+
 /* Leaflet map container sizing helper */
 .map-shell {
   width: 100%;

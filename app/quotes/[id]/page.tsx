@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, StatusBadge } from "@/components/ui";
+import { PageHeader, Button, StatusBadge, SectionHeader } from "@/components/ui";
 import StatusDropdown from "@/components/StatusDropdown";
 import { QUOTE_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -12,7 +12,7 @@ import {
   sendQuoteToCustomer,
 } from "@/app/actions/quotes";
 import { getAppUrl } from "@/lib/appUrl";
-import { Pencil, Trash2, Send, CheckCircle2, XCircle, ArrowRightCircle, Link2 } from "lucide-react";
+import { Pencil, Trash2, Send, CheckCircle2, XCircle, ArrowRightCircle, Link2, FileText, CalendarClock, ListChecks } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +47,7 @@ export default async function QuoteDetailPage({
       <PageHeader
         title={`Quote #${quote.number}`}
         subtitle={quote.title || undefined}
+        icon={FileText}
         action={
           <div className="flex flex-wrap gap-2">
             <Button href={`/quotes/${id}/edit`} variant="secondary">
@@ -89,8 +90,8 @@ export default async function QuoteDetailPage({
               </tbody>
             </table>
             <div className="flex justify-end pt-3 border-t border-border-subtle mt-2">
-              <p className="text-base font-semibold text-forest-950">
-                Total: {formatCurrency(total)}
+              <p className="text-sm text-forest-950/60">
+                Total&nbsp;<span className="text-xl font-semibold tracking-tight text-forest-950">{formatCurrency(total)}</span>
               </p>
             </div>
             {quote.notes && (
@@ -102,13 +103,13 @@ export default async function QuoteDetailPage({
 
           {quote.jobs.length > 0 && (
             <section className="card p-5">
-              <h2 className="font-semibold text-forest-950 mb-3">Linked jobs</h2>
+              <SectionHeader title="Linked jobs" icon={CalendarClock} tone="gold" />
               <ul className="space-y-2">
                 {quote.jobs.map((j) => (
                   <li key={j.id}>
                     <Link
                       href={`/jobs/${j.id}`}
-                      className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2 hover:bg-surface-muted/60"
+                      className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2.5 hover:border-forest-500/30 hover:bg-surface-muted/60 hover:translate-x-0.5"
                     >
                       <span className="text-sm font-medium">{j.title}</span>
                       <StatusBadge status={j.status} />
@@ -156,7 +157,7 @@ export default async function QuoteDetailPage({
           </section>
 
           <section className="card p-5 space-y-2">
-            <h2 className="font-semibold text-forest-950 mb-2 text-sm">Pipeline actions</h2>
+            <SectionHeader title="Pipeline actions" icon={ListChecks} />
             {(quote.status === "draft" || quote.status === "sent") && (
               <form action={sendToCustomer}>
                 <Button

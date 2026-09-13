@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, StatusBadge } from "@/components/ui";
+import { PageHeader, Button, StatusBadge, SectionHeader } from "@/components/ui";
 import { formatSqft, formatDateShort } from "@/lib/format";
 import PropertyMap, { type Measurement } from "@/components/PropertyMapField";
 import { deleteProperty } from "@/app/actions/properties";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, MapPinned, CalendarClock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +41,7 @@ export default async function PropertyDetailPage({
       <PageHeader
         title={property.label}
         subtitle={`${property.addressLine}, ${property.city}, ${property.state} ${property.zip}`}
+        icon={MapPinned}
         action={
           <div className="flex gap-2">
             <Button href={`/properties/${id}/edit`} variant="secondary">
@@ -124,12 +125,16 @@ export default async function PropertyDetailPage({
           </section>
 
           <section className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-forest-950">Jobs</h2>
-              <Button href={`/jobs/new?propertyId=${id}&customerId=${property.customerId}`} size="sm" variant="secondary">
-                <Plus size={14} /> New job
-              </Button>
-            </div>
+            <SectionHeader
+              title="Jobs"
+              icon={CalendarClock}
+              tone="gold"
+              action={
+                <Button href={`/jobs/new?propertyId=${id}&customerId=${property.customerId}`} size="sm" variant="secondary">
+                  <Plus size={14} /> New job
+                </Button>
+              }
+            />
             {property.jobs.length === 0 ? (
               <p className="text-sm text-forest-950/50">No jobs yet.</p>
             ) : (

@@ -184,5 +184,36 @@ export function FieldGroup({
   );
 }
 
+// A small icon chip + title, used for card section headers throughout detail
+// pages — same visual language as PageHeader's icon, at a smaller scale.
+export function SectionHeader({
+  title,
+  icon: Icon,
+  tone = "forest",
+  action,
+}: {
+  title: string;
+  icon: ComponentType<{ size?: number; className?: string }>;
+  tone?: "forest" | "gold" | "ice";
+  action?: ReactNode;
+}) {
+  const toneCls: Record<string, string> = {
+    forest: "bg-forest-100 text-forest-700",
+    gold: "bg-gold-100 text-gold-600",
+    ice: "bg-ice-100 text-ice-600",
+  };
+  return (
+    <div className="flex items-center justify-between mb-3.5">
+      <h2 className="flex items-center gap-2.5 font-semibold text-forest-950">
+        <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${toneCls[tone]}`}>
+          <Icon size={14} />
+        </span>
+        {title}
+      </h2>
+      {action}
+    </div>
+  );
+}
+
 export const inputClass =
   "w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm text-forest-950 shadow-sm shadow-black/[0.02] focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500/40";

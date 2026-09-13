@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, StatusBadge } from "@/components/ui";
+import { PageHeader, Button, StatusBadge, SectionHeader } from "@/components/ui";
 import { formatCurrency, formatDate, formatDateShort } from "@/lib/format";
 import { addCustomerNote, deleteCustomer, setCustomerStatus, setPipelineStage } from "@/app/actions/customers";
 import { logCall, clearFollowUp } from "@/app/actions/calls";
@@ -9,7 +9,7 @@ import { CALL_OUTCOME_LABELS } from "@/lib/callLogs";
 import CopyButton from "@/components/CopyButton";
 import StatusDropdown from "@/components/StatusDropdown";
 import { CUSTOMER_STATUS_OPTIONS, PIPELINE_STAGE_OPTIONS } from "@/lib/statusOptions";
-import { Plus, Mail, Phone, Building2, Pencil, Trash2, MapPin, PhoneCall } from "lucide-react";
+import { Plus, Mail, Phone, Building2, Pencil, Trash2, MapPin, PhoneCall, FileText, CalendarClock, History } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -72,12 +72,15 @@ export default async function CustomerDetailPage({
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <section className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-forest-950">Properties</h2>
-              <Button href={`/properties/new?customerId=${id}`} size="sm" variant="secondary">
-                <Plus size={14} /> Add property
-              </Button>
-            </div>
+            <SectionHeader
+              title="Properties"
+              icon={MapPin}
+              action={
+                <Button href={`/properties/new?customerId=${id}`} size="sm" variant="secondary">
+                  <Plus size={14} /> Add property
+                </Button>
+              }
+            />
             {customer.properties.length === 0 ? (
               <p className="text-sm text-forest-950/50">No properties yet.</p>
             ) : (
@@ -86,13 +89,15 @@ export default async function CustomerDetailPage({
                   <li key={p.id}>
                     <Link
                       href={`/properties/${p.id}`}
-                      className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2 hover:bg-surface-muted/60"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5 hover:border-forest-500/30 hover:bg-surface-muted/60 hover:translate-x-0.5"
                     >
-                      <span className="flex items-center gap-2 text-sm font-medium text-forest-950">
-                        <MapPin size={14} className="text-forest-600" />
-                        {p.label} — {p.addressLine}
+                      <span className="flex items-center gap-2.5 text-sm font-medium text-forest-950 min-w-0">
+                        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-forest-100 text-forest-600">
+                          <MapPin size={13} />
+                        </span>
+                        <span className="truncate">{p.label} — {p.addressLine}</span>
                       </span>
-                      <span className="text-xs text-forest-950/50">
+                      <span className="flex-shrink-0 text-xs text-forest-950/50">
                         {p.lawnSqft ? `${Math.round(p.lawnSqft).toLocaleString()} sq ft lawn` : ""}
                       </span>
                     </Link>
@@ -103,12 +108,16 @@ export default async function CustomerDetailPage({
           </section>
 
           <section className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-forest-950">Quotes</h2>
-              <Button href={`/quotes/new?customerId=${id}`} size="sm" variant="secondary">
-                <Plus size={14} /> New quote
-              </Button>
-            </div>
+            <SectionHeader
+              title="Quotes"
+              icon={FileText}
+              tone="ice"
+              action={
+                <Button href={`/quotes/new?customerId=${id}`} size="sm" variant="secondary">
+                  <Plus size={14} /> New quote
+                </Button>
+              }
+            />
             {customer.quotes.length === 0 ? (
               <p className="text-sm text-forest-950/50">No quotes yet.</p>
             ) : (
@@ -117,12 +126,15 @@ export default async function CustomerDetailPage({
                   <li key={q.id}>
                     <Link
                       href={`/quotes/${q.id}`}
-                      className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2 hover:bg-surface-muted/60"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5 hover:border-forest-500/30 hover:bg-surface-muted/60 hover:translate-x-0.5"
                     >
-                      <span className="text-sm font-medium text-forest-950">
-                        #{q.number} {q.title || "Untitled quote"}
+                      <span className="flex items-center gap-2.5 text-sm font-medium text-forest-950 min-w-0">
+                        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-ice-100 text-ice-600">
+                          <FileText size={13} />
+                        </span>
+                        <span className="truncate">#{q.number} {q.title || "Untitled quote"}</span>
                       </span>
-                      <span className="flex items-center gap-3 text-xs text-forest-950/60">
+                      <span className="flex flex-shrink-0 items-center gap-3 text-xs text-forest-950/60">
                         {formatCurrency(quoteTotal(q))}
                         <StatusBadge status={q.status} />
                       </span>
@@ -134,12 +146,16 @@ export default async function CustomerDetailPage({
           </section>
 
           <section className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-forest-950">Jobs</h2>
-              <Button href={`/jobs/new?customerId=${id}`} size="sm" variant="secondary">
-                <Plus size={14} /> New job
-              </Button>
-            </div>
+            <SectionHeader
+              title="Jobs"
+              icon={CalendarClock}
+              tone="gold"
+              action={
+                <Button href={`/jobs/new?customerId=${id}`} size="sm" variant="secondary">
+                  <Plus size={14} /> New job
+                </Button>
+              }
+            />
             {customer.jobs.length === 0 ? (
               <p className="text-sm text-forest-950/50">No jobs scheduled yet.</p>
             ) : (
@@ -148,10 +164,15 @@ export default async function CustomerDetailPage({
                   <li key={j.id}>
                     <Link
                       href={`/jobs/${j.id}`}
-                      className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2 hover:bg-surface-muted/60"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5 hover:border-forest-500/30 hover:bg-surface-muted/60 hover:translate-x-0.5"
                     >
-                      <span className="text-sm font-medium text-forest-950">{j.title}</span>
-                      <span className="flex items-center gap-3 text-xs text-forest-950/60">
+                      <span className="flex items-center gap-2.5 text-sm font-medium text-forest-950 min-w-0">
+                        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-gold-100 text-gold-600">
+                          <CalendarClock size={13} />
+                        </span>
+                        <span className="truncate">{j.title}</span>
+                      </span>
+                      <span className="flex flex-shrink-0 items-center gap-3 text-xs text-forest-950/60">
                         {formatDateShort(j.scheduledDate)}
                         <StatusBadge status={j.status} />
                       </span>
@@ -205,11 +226,11 @@ export default async function CustomerDetailPage({
                 <Building2 size={14} /> {customer.companyName}
               </p>
             )}
-            <div className="pt-2 border-t border-border-subtle">
+            <div className="pt-3 mt-1 border-t border-border-subtle rounded-lg bg-gradient-to-br from-forest-50 to-transparent -mx-5 px-5 pb-1">
               <p className="text-xs text-forest-950/50 uppercase tracking-wide">
                 Lifetime won revenue
               </p>
-              <p className="text-lg font-semibold text-forest-950">
+              <p className="text-2xl font-semibold tracking-tight text-forest-950">
                 {formatCurrency(wonRevenue)}
               </p>
             </div>
@@ -231,7 +252,12 @@ export default async function CustomerDetailPage({
 
           <section className="card p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-forest-950 text-sm">Call</h2>
+              <h2 className="flex items-center gap-2.5 font-semibold text-forest-950 text-sm">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-forest-100 text-forest-700">
+                  <PhoneCall size={13} />
+                </span>
+                Call
+              </h2>
               {telHref ? (
                 <div className="flex items-center gap-1.5">
                   <a
@@ -319,12 +345,12 @@ export default async function CustomerDetailPage({
           </section>
 
           <section className="card p-5">
-            <h2 className="font-semibold text-forest-950 mb-3">Activity</h2>
+            <SectionHeader title="Activity" icon={History} />
             <form action={addNoteAction} className="flex gap-2 mb-4">
               <input
                 name="note"
                 placeholder="Log a call, note, or update…"
-                className="flex-1 rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500"
+                className="flex-1 rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm shadow-sm shadow-black/[0.02] focus:outline-none focus:ring-2 focus:ring-forest-500"
               />
               <Button type="submit" size="sm">
                 Add
@@ -333,11 +359,12 @@ export default async function CustomerDetailPage({
             {customer.activities.length === 0 ? (
               <p className="text-sm text-forest-950/50">No activity logged yet.</p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="relative space-y-4 before:absolute before:left-[5px] before:top-1.5 before:bottom-1.5 before:w-px before:bg-border-subtle">
                 {customer.activities.map((a) => (
-                  <li key={a.id} className="text-sm">
+                  <li key={a.id} className="relative pl-5 text-sm">
+                    <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full bg-forest-500 ring-4 ring-forest-100" />
                     <p className="text-forest-950/80">{a.body}</p>
-                    <p className="text-xs text-forest-950/40">
+                    <p className="text-xs text-forest-950/40 mt-0.5">
                       {formatDate(a.createdAt)}
                     </p>
                   </li>

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Field, inputClass, EmptyState } from "@/components/ui";
+import { PageHeader, Field, inputClass, EmptyState, SectionHeader } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import {
   createMaterial,
@@ -11,7 +11,7 @@ import {
   setEquipmentStatus,
   deleteEquipment,
 } from "@/app/actions/inventory";
-import { AlertTriangle, Plus, Trash2, Wrench } from "lucide-react";
+import { AlertTriangle, Plus, Trash2, Wrench, Boxes, Truck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -35,12 +35,13 @@ export default async function InventoryPage() {
       <PageHeader
         title="Materials & Equipment"
         subtitle="Keep an eye on mulch, salt, and fleet maintenance before they become a problem."
+        icon={Boxes}
       />
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Materials */}
         <section className="space-y-4">
-          <h2 className="font-semibold text-forest-950">Materials</h2>
+          <SectionHeader title="Materials" icon={Boxes} />
 
           {materials.length === 0 ? (
             <EmptyState title="No materials tracked yet" description="Add mulch, salt, ice melt, or anything else you keep stock of." />
@@ -156,7 +157,7 @@ export default async function InventoryPage() {
 
         {/* Equipment */}
         <section className="space-y-4">
-          <h2 className="font-semibold text-forest-950">Equipment</h2>
+          <SectionHeader title="Equipment" icon={Truck} tone="gold" />
 
           {equipment.length === 0 ? (
             <EmptyState title="No equipment tracked yet" description="Add mowers, plows, and trucks to track maintenance." />

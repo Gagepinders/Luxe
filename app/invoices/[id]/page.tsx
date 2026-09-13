@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCompanyProfile } from "@/lib/companyProfile";
-import { PageHeader, Button } from "@/components/ui";
+import { PageHeader, Button, SectionHeader } from "@/components/ui";
 import StatusDropdown from "@/components/StatusDropdown";
 import { INVOICE_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -15,7 +15,7 @@ import {
 import { getAppUrl } from "@/lib/appUrl";
 import { isSquareConfigured } from "@/lib/square";
 import PrintButton from "@/components/PrintButton";
-import { Pencil, Trash2, Send, CheckCircle2, Link2, CreditCard } from "lucide-react";
+import { Pencil, Trash2, Send, CheckCircle2, Link2, CreditCard, Receipt, ListChecks } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +56,7 @@ export default async function InvoiceDetailPage({
       <PageHeader
         title={`Invoice #${invoice.number}`}
         subtitle={effectiveStatus}
+        icon={Receipt}
         action={
           <div className="no-print flex flex-wrap gap-2">
             <PrintButton />
@@ -181,7 +182,7 @@ export default async function InvoiceDetailPage({
           </section>
 
           <section className="card p-5 space-y-2">
-            <h2 className="font-semibold text-forest-950 mb-2 text-sm">Actions</h2>
+            <SectionHeader title="Actions" icon={ListChecks} />
             {invoice.status !== "paid" && (
               <form action={sendToCustomer}>
                 <Button

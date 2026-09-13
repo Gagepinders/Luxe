@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button } from "@/components/ui";
+import { PageHeader, Button, SectionHeader } from "@/components/ui";
 import StatusDropdown from "@/components/StatusDropdown";
 import { JOB_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -14,7 +14,7 @@ import {
 } from "@/app/actions/jobs";
 import { uploadJobPhoto, deleteJobPhoto } from "@/app/actions/jobPhotos";
 import { addJobExpense, deleteJobExpense } from "@/app/actions/jobExpenses";
-import { Pencil, Trash2, Play, CheckCircle2, XCircle, Repeat, Camera, Upload, Receipt, Star, KeyRound, AlertTriangle } from "lucide-react";
+import { Pencil, Trash2, Play, CheckCircle2, XCircle, Repeat, Camera, Upload, Receipt, Star, KeyRound, AlertTriangle, CalendarClock, DollarSign, ListChecks } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +56,7 @@ export default async function JobDetailPage({
       <PageHeader
         title={job.title}
         subtitle={`${formatDate(job.scheduledDate)}${job.startTime ? ` · ${job.startTime}` : ""}`}
+        icon={CalendarClock}
         action={
           <div className="flex flex-wrap gap-2">
             <Button href={`/jobs/${id}/edit`} variant="secondary">
@@ -155,11 +156,7 @@ export default async function JobDetailPage({
           </section>
 
           <section className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="flex items-center gap-2 font-semibold text-forest-950">
-                <Camera size={16} /> Photos
-              </h2>
-            </div>
+            <SectionHeader title="Photos" icon={Camera} tone="ice" />
             <form action={upload} className="flex flex-wrap items-center gap-2 mb-4">
               <input
                 type="file"
@@ -215,14 +212,19 @@ export default async function JobDetailPage({
           </section>
 
           <section className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-forest-950">Job costing</h2>
-              <span
-                className={`text-sm font-semibold ${profit >= 0 ? "text-success" : "text-danger"}`}
-              >
-                {formatCurrency(profit)} profit
-              </span>
-            </div>
+            <SectionHeader
+              title="Job costing"
+              icon={DollarSign}
+              tone="gold"
+              action={
+                <span
+                  className={`badge ${profit >= 0 ? "bg-success-100 text-success" : "bg-danger-100 text-danger"}`}
+                >
+                  <span className="badge-dot" />
+                  {formatCurrency(profit)} profit
+                </span>
+              }
+            />
             <form action={addExpense} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
               <input
                 name="description"
@@ -296,7 +298,7 @@ export default async function JobDetailPage({
 
         <div className="space-y-3">
           <section className="card p-5 space-y-2">
-            <h2 className="font-semibold text-forest-950 mb-2 text-sm">Actions</h2>
+            <SectionHeader title="Actions" icon={ListChecks} />
             {job.status === "scheduled" && (
               <form action={start}>
                 <Button type="submit" className="w-full">
