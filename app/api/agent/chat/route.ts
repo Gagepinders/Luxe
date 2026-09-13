@@ -10,6 +10,11 @@ import { ensureUploadsDir, safeExtension } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
 
+export async function DELETE() {
+  await prisma.agentMessage.deleteMany({});
+  return NextResponse.json({ ok: true });
+}
+
 const IMAGE_MEDIA_TYPES: Record<string, "image/jpeg" | "image/png" | "image/webp" | "image/gif"> = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
@@ -72,9 +77,11 @@ export async function POST(request: NextRequest) {
 
   const client = getAnthropicClient();
   if (!client) {
+    // Not persisted — this is a deployment-config status message, not a real
+    // conversational turn, and saving it would have the assistant "reading
+    // back" a stale outage notice to itself once a key is added later.
     const reply =
       "The AI assistant isn't set up yet — an ANTHROPIC_API_KEY needs to be added to this deployment's environment variables before I can respond. Ask whoever manages the Railway project to add one from console.anthropic.com.";
-    await prisma.agentMessage.create({ data: { role: "assistant", content: reply } });
     return NextResponse.json({ reply, toolCalls: [] });
   }
 
@@ -101,6 +108,7 @@ export async function POST(request: NextRequest) {
   const tools = buildAgentTools(toolLog);
 
   let replyText = "Sorry, something went wrong and I couldn't respond.";
+  let requestFailed = false;
   try {
     const finalMessage = await client.beta.messages.toolRunner({
       model: "claude-opus-5",
@@ -116,6 +124,7 @@ export async function POST(request: NextRequest) {
     );
     replyText = textBlocks.map((b) => b.text).join("\n\n") || "Done.";
   } catch (error) {
+    requestFailed = true;
     if (error instanceof Anthropic.AuthenticationError) {
       replyText = "The ANTHROPIC_API_KEY for this deployment looks invalid — check it in Railway.";
     } else if (error instanceof Anthropic.RateLimitError) {
@@ -127,13 +136,19 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  await prisma.agentMessage.create({
-    data: {
-      role: "assistant",
-      content: replyText,
-      toolCalls: toolLog.length > 0 ? JSON.stringify(toolLog) : null,
-    },
-  });
+  // A failed request isn't a real conversational turn — don't persist it, or
+  // the next successful turn would see it in history and think it had just
+  // said that itself (e.g. narrating a since-resolved "out of credits" error
+  // back to the user as if it were still happening).
+  if (!requestFailed) {
+    await prisma.agentMessage.create({
+      data: {
+        role: "assistant",
+        content: replyText,
+        toolCalls: toolLog.length > 0 ? JSON.stringify(toolLog) : null,
+      },
+    });
+  }
 
   return NextResponse.json({ reply: replyText, toolCalls: toolLog, imageUrl: imageFilename });
 }

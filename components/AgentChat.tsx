@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
-import { Send, Paperclip, X, Sparkles, CheckCircle2, User } from "lucide-react";
+import { Send, Paperclip, X, Sparkles, CheckCircle2, User, Trash2 } from "lucide-react";
 
 export type AgentChatMessage = {
   id: string;
@@ -40,6 +40,12 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+  }
+
+  async function clearConversation() {
+    if (!confirm("Clear the whole conversation? This can't be undone.")) return;
+    await fetch("/api/agent/chat", { method: "DELETE" });
+    setMessages([]);
   }
 
   async function send(text: string, file: File | null) {
@@ -95,6 +101,16 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
 
   return (
     <div className="card flex flex-col h-[calc(100vh-13rem)] overflow-hidden">
+      {messages.length > 0 && (
+        <div className="flex items-center justify-end border-b border-border-subtle px-4 py-2">
+          <button
+            onClick={clearConversation}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-forest-950/50 hover:bg-danger-100 hover:text-danger"
+          >
+            <Trash2 size={12} /> Clear conversation
+          </button>
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-4 px-6">
