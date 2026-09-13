@@ -22,11 +22,30 @@ const SUGGESTIONS = [
   "Remind me to order more mulch",
 ];
 
+const MAX_IMAGES = 6;
+
+// Older messages stored a single filename in imageUrl; multi-photo messages
+// store a JSON array of filenames/blob URLs. Handle both transparently.
+function parseImageUrls(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {
+    // not JSON — a plain single filename/URL from before multi-photo support
+  }
+  return [raw];
+}
+
+function resolveImageSrc(url: string) {
+  return url.startsWith("blob:") ? url : `/api/uploads/${url}`;
+}
+
 export default function AgentChat({ initialMessages }: { initialMessages: AgentChatMessage[] }) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -36,10 +55,17 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending]);
 
-  function handleFile(file: File | undefined) {
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+  function handleFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList).slice(0, MAX_IMAGES - imageFiles.length);
+    if (files.length === 0) return;
+    setImageFiles((prev) => [...prev, ...files]);
+    setImagePreviews((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+  }
+
+  function removeImage(index: number) {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function clearConversation() {
@@ -48,27 +74,28 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
     setMessages([]);
   }
 
-  async function send(text: string, file: File | null) {
-    if (!text.trim() && !file) return;
+  async function send(text: string, files: File[]) {
+    if (!text.trim() && files.length === 0) return;
 
+    const optimisticUrls = files.map((f) => URL.createObjectURL(f));
     const optimisticUser: AgentChatMessage = {
       id: `local-${nextId.current++}`,
       role: "user",
       content: text || "(photo)",
-      imageUrl: file ? URL.createObjectURL(file) : null,
+      imageUrl: optimisticUrls.length > 0 ? JSON.stringify(optimisticUrls) : null,
       toolCalls: null,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimisticUser]);
     setInput("");
-    setImageFile(null);
-    setImagePreview(null);
+    setImageFiles([]);
+    setImagePreviews([]);
     setSending(true);
 
     try {
       const formData = new FormData();
       formData.set("message", text);
-      if (file) formData.set("image", file);
+      for (const file of files) formData.append("images", file);
 
       const res = await fetch("/api/agent/chat", { method: "POST", body: formData });
       const data = await res.json();
@@ -128,7 +155,7 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
-                  onClick={() => send(s, null)}
+                  onClick={() => send(s, [])}
                   className="rounded-full border border-border-subtle px-3 py-1.5 text-xs font-medium text-forest-950/70 hover:bg-surface-muted"
                 >
                   {s}
@@ -158,24 +185,25 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
       </div>
 
       <div className="border-t border-border-subtle p-3.5">
-        {imagePreview && (
-          <div className="relative mb-2.5 inline-block">
-            <img src={imagePreview} alt="Attached" className="h-16 w-16 rounded-lg object-cover border border-border-subtle" />
-            <button
-              onClick={() => {
-                setImageFile(null);
-                setImagePreview(null);
-              }}
-              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-forest-950 text-white hover:bg-forest-800"
-            >
-              <X size={11} />
-            </button>
+        {imagePreviews.length > 0 && (
+          <div className="mb-2.5 flex flex-wrap gap-2">
+            {imagePreviews.map((preview, i) => (
+              <div key={preview} className="relative inline-block">
+                <img src={preview} alt="Attached" className="h-16 w-16 rounded-lg object-cover border border-border-subtle" />
+                <button
+                  onClick={() => removeImage(i)}
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-forest-950 text-white hover:bg-forest-800"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ))}
           </div>
         )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            send(input, imageFile);
+            send(input, imageFiles);
           }}
           className="flex items-end gap-2"
         >
@@ -183,15 +211,19 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
             ref={fileInputRef}
             type="file"
             accept="image/*"
+            multiple
             className="hidden"
-            onChange={(e) => handleFile(e.target.files?.[0])}
+            onChange={(e) => {
+              handleFiles(e.target.files);
+              e.target.value = "";
+            }}
           />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={sending}
+            disabled={sending || imageFiles.length >= MAX_IMAGES}
             className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-border-subtle text-forest-950/60 hover:bg-surface-muted disabled:opacity-50"
-            title="Attach a photo"
+            title={imageFiles.length >= MAX_IMAGES ? `Up to ${MAX_IMAGES} photos at a time` : "Attach photos"}
           >
             <Paperclip size={17} />
           </button>
@@ -201,7 +233,7 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                send(input, imageFile);
+                send(input, imageFiles);
               }
             }}
             rows={1}
@@ -211,7 +243,7 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
           />
           <button
             type="submit"
-            disabled={sending || (!input.trim() && !imageFile)}
+            disabled={sending || (!input.trim() && imageFiles.length === 0)}
             className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-b from-forest-600 to-forest-700 text-white shadow-sm shadow-forest-900/20 hover:from-forest-700 hover:to-forest-800 disabled:opacity-40"
           >
             <Send size={16} />
@@ -227,6 +259,7 @@ function ChatBubble({ message }: { message: AgentChatMessage }) {
   const toolCalls: ToolCallSummary[] = message.toolCalls ? JSON.parse(message.toolCalls) : [];
 
   if (isUser) {
+    const imageUrls = parseImageUrls(message.imageUrl);
     return (
       <div className="flex justify-end">
         <div className="flex items-end gap-2 max-w-[80%] flex-row-reverse">
@@ -234,12 +267,27 @@ function ChatBubble({ message }: { message: AgentChatMessage }) {
             <User size={13} />
           </span>
           <div className="rounded-2xl rounded-tr-sm bg-forest-700 px-4 py-2.5 text-sm text-white">
-            {message.imageUrl && (
-              <img
-                src={message.imageUrl.startsWith("blob:") ? message.imageUrl : `/api/uploads/${message.imageUrl}`}
-                alt="Attached"
-                className="mb-2 max-h-48 rounded-lg object-cover"
-              />
+            {imageUrls.length > 0 && (
+              <div
+                className={
+                  imageUrls.length === 1
+                    ? "mb-2"
+                    : "mb-2 grid grid-cols-2 gap-1.5"
+                }
+              >
+                {imageUrls.map((url) => (
+                  <img
+                    key={url}
+                    src={resolveImageSrc(url)}
+                    alt="Attached"
+                    className={
+                      imageUrls.length === 1
+                        ? "max-h-48 rounded-lg object-cover"
+                        : "h-24 w-full rounded-lg object-cover"
+                    }
+                  />
+                ))}
+              </div>
             )}
             {message.content !== "(photo)" && <p className="whitespace-pre-wrap">{message.content}</p>}
           </div>

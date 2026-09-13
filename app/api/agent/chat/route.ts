@@ -33,8 +33,10 @@ PRICING FROM A PHOTO — this is the core of how this business wants estimates d
 - Never use a property's stored measurements (lawnSqft, mulchSqft, driveSqft, walkwaySqft from get_customer/search_properties) as the basis for a photo price. Those numbers can be stale or for a different area than what's actually in the photo. Price off what you can actually see, every time — even for an existing customer whose property you could look up.
 - Always pull the real rate via get_service_rates first and use it — never guess or estimate a dollar amount out of thin air, and never substitute a "typical market rate" for the business's own configured rate.
 - Mulch (Mulch Installation, priced per yard installed): estimate the bed's square footage from the photo, assume a 3-inch install depth unless the photo or the user says otherwise, convert to cubic yards with sqft × (3/12) ÷ 27, round to a sensible order quantity (mulch is bought by the half/full yard), then price = yards × rate. Show every step: sqft estimate → depth assumed → yards → × rate → total. If you assumed the depth, say so plainly so it's easy to correct.
+- Multiple photos in one message almost always means multiple separate beds or areas around the same property (e.g. "price mulch for all these beds") — never treat them as different angles of one bed unless the message says so or it's obviously the same spot. Price each photo on its own line with its own sqft → yards → total, then give a combined yards total and a combined price at the end. If it's genuinely ambiguous whether photos are separate beds or the same bed from different angles, ask.
+- Flat-rate or per-visit services (e.g. Lawn Mowing) that aren't priced by yard or by hour: use the configured rate for the service as-is — a photo of the lawn is just confirmation it's a normal-sized residential lawn the flat rate already covers, not a basis for scaling the price up. Only adjust off the flat rate if the photo shows something clearly outside normal scope (unusually large acreage, dense obstacles, severe overgrowth requiring extra time) — and say plainly why you adjusted.
 - Hourly-priced work (e.g. Custom Project (Hourly)) with no clean unit like sqft or yards: estimate how many hours the job in the photo would take, multiply by the hourly rate, then separately estimate any material cost involved (plants, stone, lumber, etc. — state your assumptions) and add it on top. Total = (hours × hourly rate) + materials.
-- If the photo doesn't give you enough to even guess (too zoomed in, no scale reference), say so and ask for a wider shot instead of making something up.
+- If a photo doesn't give you enough to even guess (too zoomed in, no scale reference), say so for that specific photo and ask for a wider shot instead of making something up — don't let one bad photo block pricing the others.
 
 Creating a quote (create_quote) only drafts it — nothing is sent to the customer. Only call send_quote_to_customer when the user clearly asks to send or email a quote. "Quote this property" means draft it; "send this to [name]" means send it. When you do draft a quote from a photo estimate, still look up the right customer/property to attach it to (just not for the pricing math).
 
@@ -86,25 +88,30 @@ async function saveUploadedImage(file: File) {
   return { filename, buffer, ext: ".jpg" };
 }
 
+const MAX_IMAGES = 6;
+
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const message = String(formData.get("message") ?? "").trim();
-  const imageFile = formData.get("image");
-  const hasImage = imageFile instanceof File && imageFile.size > 0;
+  const imageFiles = formData
+    .getAll("images")
+    .filter((f): f is File => f instanceof File && f.size > 0)
+    .slice(0, MAX_IMAGES);
+  const hasImages = imageFiles.length > 0;
 
-  if (!message && !hasImage) {
+  if (!message && !hasImages) {
     return NextResponse.json({ error: "Message or photo required." }, { status: 400 });
   }
 
-  let imageFilename: string | null = null;
-  let imageBuffer: Buffer | null = null;
-  let imageMediaType: string | null = null;
-  if (hasImage) {
+  const imageFilenames: string[] = [];
+  const imageBlocks: { buffer: Buffer; mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" }[] = [];
+  if (hasImages) {
     try {
-      const saved = await saveUploadedImage(imageFile as File);
-      imageFilename = saved.filename;
-      imageBuffer = saved.buffer;
-      imageMediaType = IMAGE_MEDIA_TYPES[saved.ext] ?? "image/jpeg";
+      for (const file of imageFiles) {
+        const saved = await saveUploadedImage(file);
+        imageFilenames.push(saved.filename);
+        imageBlocks.push({ buffer: saved.buffer, mediaType: IMAGE_MEDIA_TYPES[saved.ext] ?? "image/jpeg" });
+      }
     } catch (error) {
       console.error("[agent/chat] image upload failed:", error);
       const reply = error instanceof Error ? error.message : "Couldn't process that photo — try a different one.";
@@ -118,8 +125,14 @@ export async function POST(request: NextRequest) {
   });
   history.reverse();
 
+  // One photo stores a plain filename (backward compatible with existing
+  // rows); more than one stores a JSON array — parsed back out wherever
+  // imageUrl is rendered.
+  const imageUrlField =
+    imageFilenames.length === 0 ? null : imageFilenames.length === 1 ? imageFilenames[0] : JSON.stringify(imageFilenames);
+
   await prisma.agentMessage.create({
-    data: { role: "user", content: message || "(photo)", imageUrl: imageFilename },
+    data: { role: "user", content: message || "(photo)", imageUrl: imageUrlField },
   });
 
   const client = getAnthropicClient();
@@ -138,17 +151,22 @@ export async function POST(request: NextRequest) {
   }));
 
   const userContent: Anthropic.MessageParam["content"] = [];
-  if (imageBuffer && imageMediaType) {
+  for (const block of imageBlocks) {
     userContent.push({
       type: "image",
       source: {
         type: "base64",
-        media_type: imageMediaType as "image/jpeg",
-        data: imageBuffer.toString("base64"),
+        media_type: block.mediaType,
+        data: block.buffer.toString("base64"),
       },
     });
   }
-  userContent.push({ type: "text", text: message || "What should I charge for this?" });
+  userContent.push({
+    type: "text",
+    text:
+      message ||
+      (imageBlocks.length > 1 ? "What should I charge for each of these?" : "What should I charge for this?"),
+  });
   messages.push({ role: "user", content: userContent });
 
   const toolLog: ToolCallSummary[] = [];
@@ -198,5 +216,5 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  return NextResponse.json({ reply: replyText, toolCalls: toolLog, imageUrl: imageFilename });
+  return NextResponse.json({ reply: replyText, toolCalls: toolLog, imageUrl: imageUrlField });
 }
