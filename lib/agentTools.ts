@@ -6,7 +6,8 @@ import { getResendClient, getFromAddress, getReplyToAddress } from "@/lib/resend
 import { getCompanyProfile } from "@/lib/companyProfile";
 import { generateToken } from "@/lib/tokens";
 import { getAppUrl } from "@/lib/appUrl";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { getAutoTodos } from "@/lib/autoTodos";
 
 export type ToolCallSummary = { name: string; summary: string; href?: string };
 
@@ -103,7 +104,7 @@ export function buildAgentTools(log: ToolCallSummary[]) {
   const getServiceRates = betaZodTool({
     name: "get_service_rates",
     description:
-      "Get the business's actual configured service types and rates (landscaping + snow removal), e.g. mulch installation $/sqft. Always use these real rates instead of guessing a price.",
+      "Get the business's actual configured service types and rates (landscaping + snow removal) — e.g. Mulch Installation is priced per yard installed. Always use these real rates instead of guessing a price.",
     inputSchema: z.object({}),
     run: async () => {
       const rates = await prisma.serviceType.findMany({
@@ -129,27 +130,38 @@ export function buildAgentTools(log: ToolCallSummary[]) {
   const getTodayOverview = betaZodTool({
     name: "get_today_overview",
     description:
-      "Get a snapshot of the business right now: jobs scheduled today, overdue invoices, pending call follow-ups, and any low-stock materials. Use for general 'how's today looking' style questions.",
+      "Get everything that needs doing right now — the exact same list the To-Dos page shows: quote follow-ups, today's jobs, overdue invoices, low-stock materials, overdue/due-soon equipment service, plus any manually-added to-dos and pending call follow-ups. Use for 'what's on my plate today' style questions — this is the single source of truth, don't reconstruct it from other tools.",
     inputSchema: z.object({}),
     run: async () => {
       const now = new Date();
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 1);
 
-      const [jobsToday, overdueInvoices, pendingFollowUps, materials] = await Promise.all([
-        prisma.job.findMany({
-          where: { scheduledDate: { gte: start, lt: end }, status: { not: "cancelled" } },
-          select: { title: true, status: true, customer: { select: { name: true } } },
+      const [autoItems, openManualTodos, pendingFollowUps] = await Promise.all([
+        getAutoTodos(),
+        prisma.todo.findMany({
+          where: { completed: false },
+          select: { title: true, dueDate: true, notes: true, customer: { select: { name: true } } },
+          orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
         }),
-        prisma.invoice.count({ where: { status: "overdue" } }),
-        prisma.callLog.count({ where: { followUpAt: { lt: now } } }),
-        prisma.materialStock.findMany({ select: { name: true, quantity: true, lowStockAt: true, unit: true } }),
+        prisma.callLog.findMany({
+          where: { followUpAt: { lt: now } },
+          select: { followUpAt: true, notes: true, customer: { select: { name: true } } },
+        }),
       ]);
-      const lowStock = materials.filter((m) => m.quantity <= m.lowStockAt);
 
-      return JSON.stringify({ jobsToday, overdueInvoiceCount: overdueInvoices, pendingFollowUpCount: pendingFollowUps, lowStock });
+      return JSON.stringify({
+        autoDetected: autoItems.map((a) => ({ title: a.title, detail: a.detail, urgency: a.bucket })),
+        manualTodos: openManualTodos.map((t) => ({
+          title: t.title,
+          dueDate: t.dueDate ? formatDate(t.dueDate) : null,
+          customer: t.customer?.name ?? null,
+          notes: t.notes,
+        })),
+        overdueCallFollowUps: pendingFollowUps.map((f) => ({
+          customer: f.customer.name,
+          wasDue: formatDate(f.followUpAt!),
+          notes: f.notes,
+        })),
+      });
     },
   });
 
