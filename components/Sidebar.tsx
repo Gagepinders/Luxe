@@ -22,6 +22,8 @@ import {
   Boxes,
   Map,
   Settings,
+  ListChecks,
+  Sparkles,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { isChromelessPath } from "@/lib/publicPaths";
@@ -29,6 +31,8 @@ import GlobalSearch from "@/components/GlobalSearch";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/agent", label: "AI Assistant", icon: Sparkles },
+  { href: "/todos", label: "To-Dos", icon: ListChecks },
   { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/calls", label: "Calls", icon: PhoneCall },

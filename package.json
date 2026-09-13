@@ -14,6 +14,7 @@
     "cron:invoice-reminders": "tsx scripts/send-invoice-reminders.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@turf/turf": "^7.4.0",

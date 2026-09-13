@@ -38,6 +38,7 @@ model Customer {
   invoices   Invoice[]
   activities Activity[]
   callLogs   CallLog[]
+  todos      Todo[]
 
   @@index([name])
   @@index([pipelineStage])
@@ -299,6 +300,42 @@ model Equipment {
   notes          String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+}
+
+model Todo {
+  id          String    @id @default(cuid())
+  title       String
+  notes       String?
+  dueDate     DateTime?
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([completed])
+  @@index([dueDate])
+  @@index([customerId])
+}
+
+// A single shared assistant conversation the whole team talks to — not
+// per-user, matching the rest of this app's "everyone sees everything"
+// model (see Team page). Tool calls are summarized as JSON for the
+// transcript UI; only the final assistant text is replayed as chat history
+// on the next turn (tool_use/tool_result blocks are turn-scoped, not
+// persisted — same tradeoff a stateless chat API always makes).
+model AgentMessage {
+  id         String   @id @default(cuid())
+  role       String // user | assistant
+  content    String
+  imageUrl   String? // stored upload filename, if the user attached a photo
+  toolCalls  String? // JSON array of {name, summary, href?} for assistant turns
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model CompanyProfile {
