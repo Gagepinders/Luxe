@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader, StatCard, SectionHeader, Field, inputClass, EmptyState } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { createTodo, toggleTodo, deleteTodo } from "@/app/actions/todos";
+import { getAutoTodos, type AutoTodoItem, type AutoTodoSource } from "@/lib/autoTodos";
 import {
   ListChecks,
   AlertTriangle,
@@ -13,6 +14,11 @@ import {
   Trash2,
   Plus,
   Inbox,
+  FileText,
+  Receipt,
+  Boxes,
+  Wrench,
+  Sparkles,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -25,8 +31,16 @@ function startOfToday() {
 
 type TodoRow = Awaited<ReturnType<typeof getTodos>>["open"][number];
 
+const SOURCE_ICON: Record<AutoTodoSource, typeof FileText> = {
+  quote: FileText,
+  job: CalendarClock,
+  invoice: Receipt,
+  material: Boxes,
+  equipment: Wrench,
+};
+
 async function getTodos() {
-  const [open, recentlyCompleted, customers] = await Promise.all([
+  const [open, recentlyCompleted, customers, auto] = await Promise.all([
     prisma.todo.findMany({
       where: { completed: false },
       orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
@@ -39,12 +53,13 @@ async function getTodos() {
       include: { customer: { select: { id: true, name: true } } },
     }),
     prisma.customer.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    getAutoTodos(),
   ]);
-  return { open, recentlyCompleted, customers };
+  return { open, recentlyCompleted, customers, auto };
 }
 
 export default async function TodosPage() {
-  const { open, recentlyCompleted, customers } = await getTodos();
+  const { open, recentlyCompleted, customers, auto } = await getTodos();
 
   const today = startOfToday();
   const tomorrow = new Date(today);
@@ -55,11 +70,18 @@ export default async function TodosPage() {
   const upcoming = open.filter((t) => t.dueDate && t.dueDate >= tomorrow);
   const noDate = open.filter((t) => !t.dueDate);
 
+  const autoOverdue = auto.filter((a) => a.bucket === "overdue");
+  const autoToday = auto.filter((a) => a.bucket === "today");
+
+  const totalOpen = open.length + auto.length;
+  const totalOverdue = overdue.length + autoOverdue.length;
+  const totalDueToday = dueToday.length + autoToday.length;
+
   return (
     <main className="p-6 md:p-8 space-y-6">
       <PageHeader
         title="To-Dos"
-        subtitle={`${open.length} open task${open.length === 1 ? "" : "s"}`}
+        subtitle={`${totalOpen} open item${totalOpen === 1 ? "" : "s"}`}
         icon={ListChecks}
       />
 
@@ -67,26 +89,26 @@ export default async function TodosPage() {
         <StatCard
           icon={AlertTriangle}
           label="Overdue"
-          value={String(overdue.length)}
-          tone={overdue.length > 0 ? "danger" : "forest"}
+          value={String(totalOverdue)}
+          tone={totalOverdue > 0 ? "danger" : "forest"}
         />
         <StatCard
           icon={CalendarClock}
           label="Due today"
-          value={String(dueToday.length)}
-          tone={dueToday.length > 0 ? "gold" : "forest"}
+          value={String(totalDueToday)}
+          tone={totalDueToday > 0 ? "gold" : "forest"}
         />
         <StatCard icon={CalendarDays} label="Upcoming" value={String(upcoming.length)} tone="ice" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2 space-y-4">
-          <TodoGroup title="Overdue" items={overdue} tone="danger" />
-          <TodoGroup title="Due today" items={dueToday} tone="warning" />
-          <TodoGroup title="Upcoming" items={upcoming} />
-          <TodoGroup title="No due date" items={noDate} />
+          <TodoGroup title="Overdue" items={overdue} auto={autoOverdue} tone="danger" />
+          <TodoGroup title="Due today" items={dueToday} auto={autoToday} tone="warning" />
+          <TodoGroup title="Upcoming" items={upcoming} auto={[]} />
+          <TodoGroup title="No due date" items={noDate} auto={[]} />
 
-          {open.length === 0 && (
+          {totalOpen === 0 && (
             <EmptyState
               icon={Inbox}
               title="Nothing on your list"
@@ -151,6 +173,11 @@ export default async function TodosPage() {
               Add task
             </button>
           </form>
+          <p className="mt-3 text-xs text-forest-950/40">
+            <Sparkles size={11} className="inline -mt-0.5 mr-1" />
+            Quote follow-ups, today&apos;s jobs, overdue invoices, low stock, and equipment service
+            are pulled in automatically — no need to add those by hand.
+          </p>
         </section>
       </div>
     </main>
@@ -160,13 +187,15 @@ export default async function TodosPage() {
 function TodoGroup({
   title,
   items,
+  auto,
   tone,
 }: {
   title: string;
   items: TodoRow[];
+  auto: AutoTodoItem[];
   tone?: "danger" | "warning";
 }) {
-  if (items.length === 0) return null;
+  if (items.length === 0 && auto.length === 0) return null;
   const toneClass =
     tone === "danger" ? "text-danger" : tone === "warning" ? "text-warning" : "text-forest-950/70";
   const chipClass =
@@ -178,9 +207,28 @@ function TodoGroup({
         <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${chipClass}`}>
           <ListChecks size={13} />
         </span>
-        {title} ({items.length})
+        {title} ({items.length + auto.length})
       </h2>
       <ul className="space-y-2">
+        {auto.map((a) => {
+          const Icon = SOURCE_ICON[a.source];
+          return (
+            <li key={a.id}>
+              <Link
+                href={a.href}
+                className="flex items-center gap-2.5 rounded-lg border border-border-subtle px-3 py-2.5 hover:bg-surface-muted"
+              >
+                <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${chipClass}`}>
+                  <Icon size={13} />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm text-forest-950 truncate">{a.title}</p>
+                  <p className="text-xs text-forest-950/50 truncate">{a.detail}</p>
+                </div>
+              </Link>
+            </li>
+          );
+        })}
         {items.map((t) => (
           <li
             key={t.id}
