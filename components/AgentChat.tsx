@@ -41,12 +41,49 @@ function resolveImageSrc(url: string) {
   return url.startsWith("blob:") ? url : `/api/uploads/${url}`;
 }
 
+const CLIENT_MAX_DIMENSION = 1600;
+const CLIENT_JPEG_QUALITY = 0.85;
+
+// Full-resolution phone photos run 8-13MB each — fine for one, but a batch
+// of several blows past what the server's proxy will even accept as a
+// request body (it errors out before our own resize step ever runs). Shrink
+// on-device first so uploads stay small and fast regardless of how many
+// photos are attached. Formats the browser can't decode (some Android HEIC
+// cases) just pass through unchanged — the server's heic-convert/sharp
+// pipeline still handles those as a fallback.
+async function compressImageFile(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, CLIENT_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close?.();
+
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", CLIENT_JPEG_QUALITY)
+    );
+    if (!blob || blob.size >= file.size) return file;
+
+    const newName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+    return new File([blob], newName, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
 export default function AgentChat({ initialMessages }: { initialMessages: AgentChatMessage[] }) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(0);
@@ -55,12 +92,18 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending]);
 
-  function handleFiles(fileList: FileList | null) {
+  async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
     const files = Array.from(fileList).slice(0, MAX_IMAGES - imageFiles.length);
     if (files.length === 0) return;
-    setImageFiles((prev) => [...prev, ...files]);
-    setImagePreviews((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+    setCompressing(true);
+    try {
+      const compressed = await Promise.all(files.map(compressImageFile));
+      setImageFiles((prev) => [...prev, ...compressed]);
+      setImagePreviews((prev) => [...prev, ...compressed.map((f) => URL.createObjectURL(f))]);
+    } finally {
+      setCompressing(false);
+    }
   }
 
   function removeImage(index: number) {
@@ -221,7 +264,7 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={sending || imageFiles.length >= MAX_IMAGES}
+            disabled={sending || compressing || imageFiles.length >= MAX_IMAGES}
             className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-border-subtle text-forest-950/60 hover:bg-surface-muted disabled:opacity-50"
             title={imageFiles.length >= MAX_IMAGES ? `Up to ${MAX_IMAGES} photos at a time` : "Attach photos"}
           >
@@ -237,13 +280,13 @@ export default function AgentChat({ initialMessages }: { initialMessages: AgentC
               }
             }}
             rows={1}
-            placeholder="Ask a question, or say what you need done…"
+            placeholder={compressing ? "Processing photos…" : "Ask a question, or say what you need done…"}
             disabled={sending}
             className="flex-1 resize-none rounded-lg border border-border-subtle bg-surface px-3 py-2.5 text-sm text-forest-950 shadow-sm shadow-black/[0.02] focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500/40 disabled:opacity-50"
           />
           <button
             type="submit"
-            disabled={sending || (!input.trim() && imageFiles.length === 0)}
+            disabled={sending || compressing || (!input.trim() && imageFiles.length === 0)}
             className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-b from-forest-600 to-forest-700 text-white shadow-sm shadow-forest-900/20 hover:from-forest-700 hover:to-forest-800 disabled:opacity-40"
           >
             <Send size={16} />
