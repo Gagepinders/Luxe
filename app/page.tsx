@@ -9,6 +9,7 @@ import { startOfMonth, endOfMonth, startOfDay, endOfDay, addDays } from "date-fn
 import {
   Plus,
   ArrowRight,
+  ChevronRight,
   DollarSign,
   Target,
   TrendingUp,
@@ -39,6 +40,7 @@ export default async function Dashboard() {
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
   const weekAhead = addDays(now, 7);
+  const fourteenDaysAgo = startOfDay(addDays(now, -13));
 
   const [
     quotesAll,
@@ -50,6 +52,7 @@ export default async function Dashboard() {
     invoicesAll,
     company,
     pendingFollowUps,
+    recentWonQuotes,
   ] = await Promise.all([
     prisma.quote.findMany({ include: { lineItems: true } }),
     prisma.job.findMany({
@@ -75,12 +78,23 @@ export default async function Dashboard() {
     prisma.invoice.findMany({ include: { lineItems: true } }),
     getCompanyProfile(),
     getPendingFollowUps(),
+    prisma.quote.findMany({
+      where: { status: "won", decidedAt: { gte: fourteenDaysAgo } },
+      include: { lineItems: true },
+    }),
   ]);
 
   const followUpsDue = pendingFollowUps.filter((f) => f.followUpAt <= now).length;
 
   const total = (q: { lineItems: { quantity: number; unitPrice: number }[] }) =>
     q.lineItems.reduce((s, li) => s + li.quantity * li.unitPrice, 0);
+
+  const sparklineDays = Array.from({ length: 14 }, (_, i) => startOfDay(addDays(fourteenDaysAgo, i)));
+  const sparklineValues = sparklineDays.map((day) =>
+    recentWonQuotes
+      .filter((q) => q.decidedAt && startOfDay(q.decidedAt).getTime() === day.getTime())
+      .reduce((s, q) => s + total(q), 0)
+  );
 
   const wonThisMonth = quotesAll.filter(
     (q) => q.status === "won" && q.decidedAt && q.decidedAt >= monthStart && q.decidedAt <= monthEnd
@@ -141,26 +155,36 @@ export default async function Dashboard() {
         }
       />
 
-      <div className="stagger-in grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatTile icon={DollarSign} label="Won revenue (mo.)" value={formatCurrency(wonRevenueThisMonth)} />
-        <StatTile icon={Target} label="Win rate" value={`${winRate.toFixed(0)}%`} />
-        <StatTile icon={TrendingUp} label="Profit (mo.)" value={formatCurrency(profitThisMonth)} />
-        <StatTile icon={CheckCircle2} label="Jobs completed (mo.)" value={String(jobsCompletedThisMonth)} />
-        <StatTile icon={Receipt} label="Outstanding invoices" value={formatCurrency(outstandingInvoices)} />
-        <StatTile
+      <div className="grid lg:grid-cols-[minmax(240px,340px)_1fr] gap-4 items-stretch">
+        <HeroStat
+          label="Won revenue this month"
+          value={formatCurrency(wonRevenueThisMonth)}
+          winRate={winRate}
+          sparkline={sparklineValues}
+        />
+        <div className="stagger-in grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <StatTile icon={TrendingUp} label="Profit (mo.)" value={formatCurrency(profitThisMonth)} tone="forest" />
+          <StatTile icon={CheckCircle2} label="Jobs completed (mo.)" value={String(jobsCompletedThisMonth)} tone="forest" />
+          <StatTile icon={Repeat} label="Recurring rev. (mo. est.)" value={formatCurrency(recurringMonthlyValue)} tone="ice" />
+          <StatTile icon={Receipt} label="Outstanding invoices" value={formatCurrency(outstandingInvoices)} tone="ice" />
+          <StatTile icon={Users} label="Customers" value={String(customerCount)} tone="gold" />
+          <StatTile icon={Target} label="Win rate" value={`${winRate.toFixed(0)}%`} tone="gold" />
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <AlertItem
           icon={AlertTriangle}
-          label="Needs follow-up (quotes + inv.)"
-          value={String(overdueQuotes.length + overdueInvoices.length)}
-          tone={overdueQuotes.length + overdueInvoices.length > 0 ? "warning" : undefined}
+          label="Needs follow-up"
+          detail="Quotes gone quiet + overdue invoices"
+          value={overdueQuotes.length + overdueInvoices.length}
           href="/quotes?status=sent"
         />
-        <StatTile icon={Repeat} label="Recurring rev. (mo. est.)" value={formatCurrency(recurringMonthlyValue)} />
-        <StatTile icon={Users} label="Customers" value={String(customerCount)} />
-        <StatTile
+        <AlertItem
           icon={PhoneCall}
           label="Follow-ups due"
-          value={String(followUpsDue)}
-          tone={followUpsDue > 0 ? "warning" : undefined}
+          detail="Calls you promised to make"
+          value={followUpsDue}
           href="/calls"
         />
       </div>
@@ -276,29 +300,30 @@ export default async function Dashboard() {
   );
 }
 
+const TILE_TONES: Record<string, string> = {
+  forest: "bg-gradient-to-br from-forest-100 to-forest-100/60 text-forest-700",
+  ice: "bg-gradient-to-br from-ice-100 to-ice-100/60 text-ice-600",
+  gold: "bg-gradient-to-br from-gold-100 to-gold-100/60 text-gold-600",
+  warning: "bg-gradient-to-br from-warning-100 to-warning-100 text-warning",
+};
+
 function StatTile({
   icon: Icon,
   label,
   value,
-  tone,
+  tone = "forest",
   href,
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
-  tone?: "warning";
+  tone?: "forest" | "ice" | "gold" | "warning";
   href?: string;
 }) {
   const content = (
     <>
       <div className="flex items-center gap-2.5 mb-2">
-        <span
-          className={`flex h-8 w-8 items-center justify-center rounded-lg shadow-sm ${
-            tone === "warning"
-              ? "bg-gradient-to-br from-warning-100 to-warning-100 text-warning"
-              : "bg-gradient-to-br from-forest-100 to-forest-100/60 text-forest-700"
-          }`}
-        >
+        <span className={`flex h-8 w-8 items-center justify-center rounded-lg shadow-sm ${TILE_TONES[tone]}`}>
           <Icon size={15} />
         </span>
         <p className="text-[11px] font-medium text-forest-950/50 uppercase tracking-wide">{label}</p>
@@ -314,5 +339,101 @@ function StatTile({
     </Link>
   ) : (
     <div className="card p-4">{content}</div>
+  );
+}
+
+// The dashboard's one featured number — bigger, on a gradient ground, with a
+// real 14-day sparkline so "revenue" reads as a trend, not just a total.
+function HeroStat({
+  label,
+  value,
+  winRate,
+  sparkline,
+}: {
+  label: string;
+  value: string;
+  winRate: number;
+  sparkline: number[];
+}) {
+  const max = Math.max(1, ...sparkline);
+  const W = 280;
+  const H = 56;
+  const step = W / (sparkline.length - 1);
+  const points = sparkline.map((v, i) => `${i * step},${H - (v / max) * (H - 6) - 3}`).join(" ");
+  const areaPoints = `0,${H} ${points} ${W},${H}`;
+
+  return (
+    <div className="animate-in relative overflow-hidden rounded-2xl bg-gradient-to-br from-forest-800 to-forest-950 p-5 flex flex-col justify-between text-white shadow-[0_12px_32px_-12px_rgba(13,31,20,0.5)]">
+      <div className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-gold-500/10 blur-2xl" />
+      <div className="relative flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+            <DollarSign size={16} />
+          </span>
+          <p className="text-[11px] font-medium uppercase tracking-wide text-forest-100/70">{label}</p>
+        </div>
+        <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-gold-500">
+          <Target size={11} /> {winRate.toFixed(0)}% win rate
+        </span>
+      </div>
+
+      <p className="relative mt-3 text-4xl font-semibold tracking-tight">{value}</p>
+
+      <div className="relative mt-3">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-14" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#c9a227" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#c9a227" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <polygon points={areaPoints} fill="url(#sparkFill)" />
+          <polyline points={points} fill="none" stroke="#c9a227" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <p className="text-[10px] text-forest-100/50 mt-1">Last 14 days</p>
+      </div>
+    </div>
+  );
+}
+
+// A horizontal "thing to do" row rather than a stat to admire — visually
+// distinct from the number tiles so it reads as actionable, not decorative.
+function AlertItem({
+  icon: Icon,
+  label,
+  detail,
+  value,
+  href,
+}: {
+  icon: LucideIcon;
+  label: string;
+  detail: string;
+  value: number;
+  href: string;
+}) {
+  const active = value > 0;
+  return (
+    <Link
+      href={href}
+      className={`card card-interactive flex items-center gap-3.5 p-4 ${
+        active ? "border-warning/30 bg-gradient-to-r from-warning-100/60 to-transparent" : ""
+      }`}
+    >
+      <span
+        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${
+          active ? "bg-warning text-white" : "bg-forest-100 text-forest-700"
+        }`}
+      >
+        <Icon size={17} />
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-forest-950">{label}</p>
+        <p className="text-xs text-forest-950/50 truncate">{detail}</p>
+      </div>
+      <p className={`text-2xl font-semibold tracking-tight ${active ? "text-warning" : "text-forest-950/30"}`}>
+        {value}
+      </p>
+      <ChevronRight size={16} className="text-forest-950/30 flex-shrink-0" />
+    </Link>
   );
 }

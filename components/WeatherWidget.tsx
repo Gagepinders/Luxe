@@ -16,7 +16,12 @@ export default async function WeatherWidget() {
   return (
     <section className="card p-5">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold text-forest-950">{hq.label} — 7-Day Forecast</h2>
+        <h2 className="flex items-center gap-2.5 font-semibold text-forest-950">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-ice-100 text-ice-600">
+            <CloudSnow size={14} />
+          </span>
+          {hq.label} — 7-Day Forecast
+        </h2>
         <Link
           href="/weather"
           className="text-xs text-forest-700 hover:underline flex items-center gap-1"
@@ -37,26 +42,31 @@ export default async function WeatherWidget() {
         {forecast.daily.map((day, i) => {
           const { label, icon } = describeWeatherCode(day.weatherCode);
           const isSnow = day.snowfallIn > 0;
+          const isToday = i === 0;
           return (
             <div
               key={day.date}
-              className={`rounded-lg border p-2 text-center ${
-                isSnow ? "border-ice-500/40 bg-ice-100/50" : "border-border-subtle"
+              className={`rounded-lg p-2 text-center transition-transform hover:-translate-y-0.5 ${
+                isToday
+                  ? "bg-gradient-to-b from-forest-700 to-forest-800 text-white shadow-[0_6px_16px_-6px_rgba(13,31,20,0.45)]"
+                  : isSnow
+                    ? "border border-ice-500/40 bg-ice-100/50"
+                    : "border border-border-subtle"
               }`}
               title={label}
             >
-              <p className="text-[10px] font-medium text-forest-950/60 uppercase">
-                {i === 0 ? "Today" : format(new Date(day.date), "EEE")}
+              <p className={`text-[10px] font-medium uppercase ${isToday ? "text-forest-100/70" : "text-forest-950/60"}`}>
+                {isToday ? "Today" : format(new Date(day.date), "EEE")}
               </p>
               <p className="text-xl leading-tight my-1">{icon}</p>
-              <p className="text-xs font-semibold text-forest-950">{day.tempMaxF}°</p>
-              <p className="text-[10px] text-forest-950/40">{day.tempMinF}°</p>
+              <p className={`text-xs font-semibold ${isToday ? "text-white" : "text-forest-950"}`}>{day.tempMaxF}°</p>
+              <p className={`text-[10px] ${isToday ? "text-forest-100/50" : "text-forest-950/40"}`}>{day.tempMinF}°</p>
               {isSnow ? (
-                <p className="text-[10px] font-medium text-ice-600 mt-1">
+                <p className={`text-[10px] font-medium mt-1 ${isToday ? "text-gold-500" : "text-ice-600"}`}>
                   {day.snowfallIn.toFixed(1)}&quot;
                 </p>
               ) : (
-                <p className="text-[10px] text-forest-950/40 mt-1">{label}</p>
+                <p className={`text-[10px] mt-1 ${isToday ? "text-forest-100/50" : "text-forest-950/40"}`}>{label}</p>
               )}
             </div>
           );
