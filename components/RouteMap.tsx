@@ -6,13 +6,32 @@ import "leaflet/dist/leaflet.css";
 import type { RouteStop } from "@/components/RoutePlanner";
 import MapBaseLayers from "@/components/MapBaseLayers";
 
-function numberedIcon(n: number, color: string) {
+// A single pin's label — "3" for a lone stop, "3·4" when multiple jobs
+// share the exact same property (a Marker at an identical position would
+// otherwise render directly on top of the previous one, hiding it
+// completely rather than just overlapping visually).
+function numberedIcon(label: string, color: string) {
+  const width = label.length > 1 ? 22 + label.length * 7 : 26;
   return L.divIcon({
     className: "",
-    html: `<div style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:${color};color:white;font-size:12px;font-weight:700;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.4)">${n}</div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:${width}px;height:26px;border-radius:13px;background:${color};color:white;font-size:11px;font-weight:700;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.4);padding:0 2px">${label}</div>`,
+    iconSize: [width, 26],
+    iconAnchor: [width / 2, 13],
   });
+}
+
+// Group stops that share the same property (rounded to ~1m precision) so
+// each property gets exactly one marker, labeled with every stop number
+// that visits it, instead of one marker per job silently burying the rest.
+function groupByLocation(stops: RouteStop[]) {
+  const groups = new Map<string, { lat: number; lng: number; members: { index: number; stop: RouteStop }[] }>();
+  stops.forEach((s, i) => {
+    const key = `${s.lat.toFixed(5)},${s.lng.toFixed(5)}`;
+    const existing = groups.get(key);
+    if (existing) existing.members.push({ index: i, stop: s });
+    else groups.set(key, { lat: s.lat, lng: s.lng, members: [{ index: i, stop: s }] });
+  });
+  return Array.from(groups.values());
 }
 
 const depotIcon = L.divIcon({
@@ -48,10 +67,18 @@ export default function RouteMap({
         <Marker position={depot} icon={depotIcon}>
           <Tooltip>Luxe Landscape & Snow — home base</Tooltip>
         </Marker>
-        {stops.map((s, i) => (
-          <Marker key={s.id} position={[s.lat, s.lng]} icon={numberedIcon(i + 1, "#235233")}>
+        {groupByLocation(stops).map((group) => (
+          <Marker
+            key={group.members.map((m) => m.stop.id).join("-")}
+            position={[group.lat, group.lng]}
+            icon={numberedIcon(group.members.map((m) => m.index + 1).join("·"), "#235233")}
+          >
             <Tooltip>
-              {i + 1}. {s.title} — {s.customerName}
+              {group.members.map((m) => (
+                <div key={m.stop.id}>
+                  {m.index + 1}. {m.stop.title} — {m.stop.customerName}
+                </div>
+              ))}
             </Tooltip>
           </Marker>
         ))}
