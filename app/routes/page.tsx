@@ -4,6 +4,7 @@ import { getCompanyProfile } from "@/lib/companyProfile";
 import { PageHeader } from "@/components/ui";
 import RoutePlanner, { type RouteStop } from "@/components/RoutePlanner";
 import { format, addDays } from "date-fns";
+import { Route } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,7 @@ export default async function RoutesPage({
       <PageHeader
         title="Routes"
         subtitle="Plan and optimize today's driving route between jobs"
+        icon={Route}
       />
 
       <div className="flex items-center gap-3 mb-6">

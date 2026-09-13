@@ -1,7 +1,7 @@
 import { getCompanyProfile } from "@/lib/companyProfile";
 import { updateCompanyProfile } from "@/app/actions/company";
 import { PageHeader, Field, inputClass, Button } from "@/components/ui";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Settings } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,7 @@ export default async function SettingsPage({
       <PageHeader
         title="Settings"
         subtitle="Company info used across quotes, invoices, emails, and the routing map."
+        icon={Settings}
       />
 
       {saved === "1" && (

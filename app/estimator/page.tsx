@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
 import EstimatorTool from "@/components/EstimatorTool";
+import { Calculator } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function EstimatorPage() {
       <PageHeader
         title="Estimator"
         subtitle="Quick ballpark pricing from a property's measured areas — for phone estimates."
+        icon={Calculator}
       />
       <EstimatorTool customers={customers} properties={properties} serviceTypes={serviceTypes} />
     </main>

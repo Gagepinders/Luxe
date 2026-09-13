@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, StatusBadge, EmptyState } from "@/components/ui";
+import { PageHeader, Button, StatusBadge, EmptyState, StatCard } from "@/components/ui";
 import { formatDate } from "@/lib/format";
-import { Plus } from "lucide-react";
+import { Plus, Mail, Send, Users, FileEdit } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -12,17 +12,30 @@ export default async function CampaignsPage() {
   });
   const resendConfigured = Boolean(process.env.RESEND_API_KEY);
 
+  const sentCount = campaigns.filter((c) => c.status === "sent").length;
+  const draftCount = campaigns.filter((c) => c.status === "draft").length;
+  const totalRecipients = campaigns.reduce((s, c) => s + (c.recipientCount || 0), 0);
+
   return (
     <main className="p-6 md:p-8">
       <PageHeader
         title="Campaigns"
         subtitle="Send updates, promos, and seasonal reminders to your customers"
+        icon={Mail}
         action={
           <Button href="/campaigns/new">
             <Plus size={16} /> New Campaign
           </Button>
         }
       />
+
+      {campaigns.length > 0 && (
+        <div className="stagger-in grid grid-cols-3 gap-4 mb-6">
+          <StatCard icon={Send} label="Sent" value={String(sentCount)} tone="forest" />
+          <StatCard icon={Users} label="Recipients reached" value={totalRecipients.toLocaleString()} tone="gold" />
+          <StatCard icon={FileEdit} label="Drafts" value={String(draftCount)} tone="ice" />
+        </div>
+      )}
 
       {!resendConfigured && (
         <div className="mb-5 rounded-lg border border-warning/30 bg-warning-100 px-4 py-3 text-sm text-warning">

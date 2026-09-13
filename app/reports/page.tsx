@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, StatCard, SectionHeader } from "@/components/ui";
 import { formatCurrency } from "@/lib/format";
-import { TrendingUp, Target, PiggyBank, Trophy, Download, type LucideIcon } from "lucide-react";
+import { TrendingUp, Target, PiggyBank, Trophy, Download, BarChart3, Users, Receipt } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -114,40 +114,42 @@ export default async function ReportsPage({
 
   return (
     <main className="p-6 md:p-8">
-      <PageHeader title="Reports" subtitle="Where the business stands, at a glance." />
+      <PageHeader title="Reports" subtitle="Where the business stands, at a glance." icon={BarChart3} />
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={TrendingUp} label="Revenue collected (all time)" value={formatCurrency(totalCollected)} />
+      <div className="stagger-in grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon={TrendingUp} label="Revenue collected (all time)" value={formatCurrency(totalCollected)} tone="forest" />
         <StatCard
           icon={Target}
           label="Quote win rate"
           value={winRate === null ? "—" : `${winRate.toFixed(0)}%`}
           hint={`${won.length} won / ${decided.length} decided`}
+          tone="gold"
         />
         <StatCard
           icon={PiggyBank}
           label="Avg. job profit"
           value={avgProfit === null ? "—" : formatCurrency(avgProfit)}
           hint={avgMarginPct === null ? undefined : `${avgMarginPct.toFixed(0)}% margin`}
+          tone="ice"
         />
-        <StatCard icon={Trophy} label="Open pipeline value" value={formatCurrency(pipelineValue)} />
+        <StatCard icon={Trophy} label="Open pipeline value" value={formatCurrency(pipelineValue)} tone="forest" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <section className="card p-5 lg:col-span-2">
-          <h2 className="font-semibold text-forest-950 mb-4">Revenue collected, last 6 months</h2>
+          <SectionHeader title="Revenue collected, last 6 months" icon={TrendingUp} />
           <div className="flex items-end gap-3 h-40">
             {months.map((m) => {
               const value = revenueByMonth.get(m) ?? 0;
               const heightPct = Math.max(4, (value / maxMonthRevenue) * 100);
               return (
-                <div key={m} className="flex-1 flex flex-col items-center gap-1.5">
+                <div key={m} className="flex-1 flex flex-col items-center gap-1.5 group">
                   <p className="text-xs font-medium text-forest-950">
                     {value > 0 ? formatCurrency(value) : ""}
                   </p>
                   <div className="w-full flex-1 flex items-end">
                     <div
-                      className="w-full rounded-t-md bg-forest-700"
+                      className="w-full rounded-t-md bg-gradient-to-t from-forest-700 to-forest-500 transition-all group-hover:from-forest-800 group-hover:to-forest-600"
                       style={{ height: `${heightPct}%` }}
                     />
                   </div>
@@ -159,7 +161,7 @@ export default async function ReportsPage({
         </section>
 
         <section className="card p-5">
-          <h2 className="font-semibold text-forest-950 mb-4">Top customers</h2>
+          <SectionHeader title="Top customers" icon={Users} tone="gold" />
           {topCustomers.length === 0 ? (
             <p className="text-sm text-forest-950/50">No paid invoices yet.</p>
           ) : (
@@ -181,7 +183,12 @@ export default async function ReportsPage({
 
       <section className="card p-5 mt-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 className="font-semibold text-forest-950">Tax &amp; accounting — {taxYear}</h2>
+          <h2 className="flex items-center gap-2.5 font-semibold text-forest-950">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-ice-100 text-ice-600">
+              <Receipt size={14} />
+            </span>
+            Tax &amp; accounting — {taxYear}
+          </h2>
           <div className="flex gap-1.5">
             {yearOptions.map((y) => (
               <Link
@@ -248,28 +255,5 @@ export default async function ReportsPage({
         </div>
       </section>
     </main>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="card p-4">
-      <div className="flex items-center gap-2 text-forest-950/50 mb-1.5">
-        <Icon size={14} />
-        <p className="text-xs font-medium uppercase tracking-wide">{label}</p>
-      </div>
-      <p className="text-2xl font-semibold text-forest-950">{value}</p>
-      {hint && <p className="text-xs text-forest-950/40 mt-0.5">{hint}</p>}
-    </div>
   );
 }

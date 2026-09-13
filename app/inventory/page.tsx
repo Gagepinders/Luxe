@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Field, inputClass, EmptyState, SectionHeader } from "@/components/ui";
+import { PageHeader, Field, inputClass, EmptyState, SectionHeader, StatCard } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import {
   createMaterial,
@@ -30,6 +30,10 @@ export default async function InventoryPage() {
   const now = new Date();
   const soon = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+  const lowStockCount = materials.filter((m) => m.quantity <= m.lowStockAt).length;
+  const overdueCount = equipment.filter((e) => e.nextServiceDue && e.nextServiceDue < now).length;
+  const activeEquipmentCount = equipment.filter((e) => e.status === "active").length;
+
   return (
     <main className="p-6 md:p-8">
       <PageHeader
@@ -37,6 +41,24 @@ export default async function InventoryPage() {
         subtitle="Keep an eye on mulch, salt, and fleet maintenance before they become a problem."
         icon={Boxes}
       />
+
+      {(materials.length > 0 || equipment.length > 0) && (
+        <div className="stagger-in grid grid-cols-3 gap-4 mb-6">
+          <StatCard
+            icon={AlertTriangle}
+            label="Low stock"
+            value={String(lowStockCount)}
+            tone={lowStockCount > 0 ? "danger" : "forest"}
+          />
+          <StatCard
+            icon={Wrench}
+            label="Maintenance overdue"
+            value={String(overdueCount)}
+            tone={overdueCount > 0 ? "gold" : "forest"}
+          />
+          <StatCard icon={Truck} label="Active equipment" value={String(activeEquipmentCount)} tone="ice" />
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Materials */}

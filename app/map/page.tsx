@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getCompanyProfile } from "@/lib/companyProfile";
 import { PageHeader } from "@/components/ui";
 import PropertiesMap from "@/components/PropertiesMapField";
+import { Map as MapIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,7 @@ export default async function MapPage() {
       <PageHeader
         title="Map"
         subtitle="Every property at a glance on high-res satellite imagery — search any address, measure it, and save it right here."
+        icon={MapIcon}
       />
       <PropertiesMap
         properties={pins}

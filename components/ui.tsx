@@ -231,12 +231,14 @@ export function StatCard({
   value,
   tone = "forest",
   href,
+  hint,
 }: {
   icon: ComponentType<{ size?: number; className?: string }>;
   label: string;
   value: string;
   tone?: "forest" | "ice" | "gold" | "danger";
   href?: string;
+  hint?: string;
 }) {
   const content = (
     <>
@@ -249,6 +251,7 @@ export function StatCard({
       <p className={`text-2xl font-semibold tracking-tight ${tone === "danger" ? "text-danger" : "text-forest-950"}`}>
         {value}
       </p>
+      {hint && <p className="text-xs text-forest-950/40 mt-0.5">{hint}</p>}
     </>
   );
   return href ? (

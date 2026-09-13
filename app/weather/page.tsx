@@ -21,6 +21,7 @@ export default async function WeatherPage() {
       <PageHeader
         title="Weather"
         subtitle="24/7 monitoring across every town you have properties in."
+        icon={CloudSnow}
       />
 
       {alertAreas.length > 0 && (
