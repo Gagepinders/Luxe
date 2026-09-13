@@ -5,7 +5,7 @@ import StatusDropdown from "@/components/StatusDropdown";
 import { setCustomerStatus, setPipelineStage } from "@/app/actions/customers";
 import { CUSTOMER_STATUS_OPTIONS, PIPELINE_STAGE_OPTIONS } from "@/lib/statusOptions";
 import { initials } from "@/lib/format";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +46,7 @@ export default async function CustomersPage({
       <PageHeader
         title="Customers"
         subtitle={`${customers.length} customer${customers.length === 1 ? "" : "s"}`}
+        icon={Users}
         action={
           <Button href="/customers/new">
             <Plus size={16} /> New Customer

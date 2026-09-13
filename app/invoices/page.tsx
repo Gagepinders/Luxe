@@ -5,7 +5,7 @@ import StatusDropdown from "@/components/StatusDropdown";
 import { setInvoiceStatus } from "@/app/actions/invoices";
 import { INVOICE_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { Plus } from "lucide-react";
+import { Plus, Receipt } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +58,7 @@ export default async function InvoicesPage({
       <PageHeader
         title="Invoices"
         subtitle="Bill completed jobs and track what's outstanding"
+        icon={Receipt}
         action={
           <Button href="/invoices/new">
             <Plus size={16} /> New Invoice

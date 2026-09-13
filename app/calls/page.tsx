@@ -38,6 +38,7 @@ export default async function CallsPage() {
       <PageHeader
         title="Calls"
         subtitle={`${pendingFollowUps.length} follow-up${pendingFollowUps.length === 1 ? "" : "s"} pending`}
+        icon={PhoneCall}
       />
 
       <div className="grid lg:grid-cols-3 gap-6">

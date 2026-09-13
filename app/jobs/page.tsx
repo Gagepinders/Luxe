@@ -5,7 +5,7 @@ import StatusDropdown from "@/components/StatusDropdown";
 import { setJobStatus } from "@/app/actions/jobs";
 import { JOB_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatDateShort, formatCurrency } from "@/lib/format";
-import { Plus, LayoutList, CalendarDays } from "lucide-react";
+import { Plus, LayoutList, CalendarDays, CalendarClock } from "lucide-react";
 import {
   startOfMonth,
   endOfMonth,
@@ -37,6 +37,7 @@ export default async function JobsPage({
       <PageHeader
         title="Jobs"
         subtitle={`${jobs.length} job${jobs.length === 1 ? "" : "s"}`}
+        icon={CalendarClock}
         action={
           <Button href="/jobs/new">
             <Plus size={16} /> Schedule Job

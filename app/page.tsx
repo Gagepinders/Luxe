@@ -18,6 +18,10 @@ import {
   Repeat,
   Users,
   PhoneCall,
+  LayoutDashboard,
+  CalendarDays,
+  Kanban,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 
@@ -124,6 +128,7 @@ export default async function Dashboard() {
       <PageHeader
         title="Dashboard"
         subtitle={`${company.name} — ${company.city}, ${company.state}`}
+        icon={LayoutDashboard}
         action={
           <div className="flex gap-2">
             <Button href="/quotes/new" variant="secondary">
@@ -136,7 +141,7 @@ export default async function Dashboard() {
         }
       />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="stagger-in grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatTile icon={DollarSign} label="Won revenue (mo.)" value={formatCurrency(wonRevenueThisMonth)} />
         <StatTile icon={Target} label="Win rate" value={`${winRate.toFixed(0)}%`} />
         <StatTile icon={TrendingUp} label="Profit (mo.)" value={formatCurrency(profitThisMonth)} />
@@ -165,7 +170,12 @@ export default async function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         <section className="card p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-forest-950">Upcoming jobs (next 7 days)</h2>
+            <h2 className="flex items-center gap-2 font-semibold text-forest-950">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-forest-100 text-forest-700">
+                <CalendarDays size={14} />
+              </span>
+              Upcoming jobs (next 7 days)
+            </h2>
             <Link href="/jobs" className="text-xs text-forest-700 hover:underline flex items-center gap-1">
               View all <ArrowRight size={12} />
             </Link>
@@ -173,12 +183,12 @@ export default async function Dashboard() {
           {upcomingJobs.length === 0 ? (
             <p className="text-sm text-forest-950/50">Nothing scheduled in the next week.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="stagger-in space-y-2">
               {upcomingJobs.map((j) => (
                 <li key={j.id}>
                   <Link
                     href={`/jobs/${j.id}`}
-                    className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2 hover:bg-surface-muted/60"
+                    className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2.5 hover:border-forest-500/30 hover:bg-surface-muted/60 hover:translate-x-0.5"
                   >
                     <span>
                       <span className="block text-sm font-medium text-forest-950">{j.title}</span>
@@ -198,7 +208,12 @@ export default async function Dashboard() {
         </section>
 
         <section className="card p-5">
-          <h2 className="font-semibold text-forest-950 mb-4">Quote pipeline</h2>
+          <h2 className="flex items-center gap-2 font-semibold text-forest-950 mb-4">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold-100 text-gold-600">
+              <Kanban size={14} />
+            </span>
+            Quote pipeline
+          </h2>
           <div className="space-y-3">
             {pipelineCounts.map((p) => (
               <div key={p.status}>
@@ -208,7 +223,7 @@ export default async function Dashboard() {
                 </div>
                 <div className="h-2 rounded-full bg-surface-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full"
+                    className="h-full rounded-full transition-[width] duration-700 ease-out"
                     style={{
                       width: `${(p.count / maxPipeline) * 100}%`,
                       background: STATUS_COLORS[p.status],
@@ -229,7 +244,12 @@ export default async function Dashboard() {
 
       <section className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-forest-950">Recent quote activity</h2>
+          <h2 className="flex items-center gap-2 font-semibold text-forest-950">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-ice-100 text-ice-600">
+              <FileText size={14} />
+            </span>
+            Recent quote activity
+          </h2>
           <Link href="/quotes" className="text-xs text-forest-700 hover:underline flex items-center gap-1">
             View all <ArrowRight size={12} />
           </Link>
@@ -271,23 +291,25 @@ function StatTile({
 }) {
   const content = (
     <>
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-2.5 mb-2">
         <span
-          className={`flex h-6 w-6 items-center justify-center rounded-md ${
-            tone === "warning" ? "bg-warning-100 text-warning" : "bg-forest-100 text-forest-700"
+          className={`flex h-8 w-8 items-center justify-center rounded-lg shadow-sm ${
+            tone === "warning"
+              ? "bg-gradient-to-br from-warning-100 to-warning-100 text-warning"
+              : "bg-gradient-to-br from-forest-100 to-forest-100/60 text-forest-700"
           }`}
         >
-          <Icon size={13} />
+          <Icon size={15} />
         </span>
-        <p className="text-xs text-forest-950/50 uppercase tracking-wide">{label}</p>
+        <p className="text-[11px] font-medium text-forest-950/50 uppercase tracking-wide">{label}</p>
       </div>
-      <p className={`text-xl font-semibold ${tone === "warning" ? "text-warning" : "text-forest-950"}`}>
+      <p className={`text-2xl font-semibold tracking-tight ${tone === "warning" ? "text-warning" : "text-forest-950"}`}>
         {value}
       </p>
     </>
   );
   return href ? (
-    <Link href={href} className="card p-4 block hover:shadow-md transition-shadow">
+    <Link href={href} className="card card-interactive p-4 block">
       {content}
     </Link>
   ) : (

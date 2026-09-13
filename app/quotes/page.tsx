@@ -5,7 +5,7 @@ import StatusDropdown from "@/components/StatusDropdown";
 import { setQuoteStatus } from "@/app/actions/quotes";
 import { QUOTE_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { Plus } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +46,7 @@ export default async function QuotesPage({
       <PageHeader
         title="Quotes"
         subtitle="Track every estimate from draft to won or lost"
+        icon={FileText}
         action={
           <Button href="/quotes/new">
             <Plus size={16} /> New Quote

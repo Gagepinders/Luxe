@@ -52,12 +52,13 @@ export default function Sidebar() {
   if (isChromelessPath(pathname)) return null;
 
   return (
-    <aside className="no-print hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 bg-forest-950 text-forest-50">
-      <div className="flex items-center gap-2 px-5 py-5 border-b border-white/10">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold-500 text-forest-950">
+    <aside className="no-print hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 bg-gradient-to-b from-forest-950 via-forest-950 to-forest-900 text-forest-50">
+      <div className="relative flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
+        <div className="pointer-events-none absolute -left-6 -top-10 h-32 w-32 rounded-full bg-gold-500/10 blur-2xl" />
+        <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-gold-500 to-gold-600 text-forest-950 shadow-[0_2px_10px_-2px_rgba(201,162,39,0.55)]">
           <Leaf size={20} strokeWidth={2.5} />
         </div>
-        <div>
+        <div className="relative">
           <p className="text-sm font-semibold leading-tight text-white">
             Luxe Landscape
           </p>
@@ -69,7 +70,7 @@ export default function Sidebar() {
 
       <GlobalSearch />
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {NAV.map((item) => {
           const active =
             item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -78,13 +79,21 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                 active
-                  ? "bg-forest-700 text-white"
-                  : "text-forest-100/80 hover:bg-forest-800 hover:text-white"
+                  ? "bg-white/10 text-white"
+                  : "text-forest-100/75 hover:bg-white/5 hover:text-white hover:translate-x-0.5"
               }`}
             >
-              <Icon size={17} />
+              <span
+                className={`absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-gold-500 transition-opacity ${
+                  active ? "opacity-100" : "opacity-0"
+                }`}
+              />
+              <Icon
+                size={17}
+                className={active ? "text-gold-500" : "text-forest-100/60 group-hover:text-forest-100"}
+              />
               {item.label}
             </Link>
           );
@@ -98,7 +107,7 @@ export default function Sidebar() {
       <form action={logout} className="px-3 pb-4">
         <button
           type="submit"
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-forest-100/80 hover:bg-forest-800 hover:text-white"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-forest-100/75 hover:bg-white/5 hover:text-white"
         >
           <LogOut size={17} />
           Log out

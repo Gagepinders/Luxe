@@ -1,20 +1,29 @@
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, type ComponentType } from "react";
 
 export function PageHeader({
   title,
   subtitle,
   action,
+  icon: Icon,
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
+  icon?: ComponentType<{ size?: number; className?: string }>;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-forest-950">{title}</h1>
-        {subtitle && <p className="text-sm text-forest-950/60 mt-1">{subtitle}</p>}
+    <div className="animate-in flex flex-wrap items-start justify-between gap-3 mb-7">
+      <div className="flex items-start gap-3.5">
+        {Icon && (
+          <span className="mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-forest-600 to-forest-800 text-white shadow-[0_4px_14px_-4px_rgba(13,31,20,0.45)]">
+            <Icon size={20} />
+          </span>
+        )}
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-forest-950">{title}</h1>
+          {subtitle && <p className="text-sm text-forest-950/60 mt-1">{subtitle}</p>}
+        </div>
       </div>
       {action}
     </div>
@@ -43,16 +52,18 @@ export function Button({
   title?: string;
 }) {
   const base =
-    "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors whitespace-nowrap";
+    "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium whitespace-nowrap active:scale-[0.97]";
   const sizes = size === "sm" ? "px-2.5 py-1.5 text-xs" : "px-4 py-2 text-sm";
   const variants: Record<string, string> = {
-    primary: "bg-forest-700 text-white hover:bg-forest-800",
+    primary:
+      "bg-gradient-to-b from-forest-600 to-forest-700 text-white shadow-sm shadow-forest-900/20 hover:from-forest-700 hover:to-forest-800 hover:shadow-md hover:shadow-forest-900/25",
     secondary:
-      "bg-surface border border-border-subtle text-forest-950 hover:bg-surface-muted",
+      "bg-surface border border-border-subtle text-forest-950 hover:bg-surface-muted hover:border-forest-500/30",
     ghost: "text-forest-950/70 hover:bg-surface-muted",
-    danger: "bg-danger text-white hover:bg-danger/90",
+    danger:
+      "bg-gradient-to-b from-danger to-danger/90 text-white shadow-sm shadow-danger/20 hover:shadow-md hover:shadow-danger/25",
   };
-  const disabledCls = disabled ? "opacity-50 pointer-events-none" : "";
+  const disabledCls = disabled ? "opacity-50 pointer-events-none active:scale-100" : "";
   const cls = `${base} ${sizes} ${variants[variant]} ${disabledCls} ${className}`;
 
   if (href) {
@@ -99,7 +110,10 @@ export const STATUS_STYLES: Record<string, string> = {
 export function StatusBadge({ status }: { status: string }) {
   const style = STATUS_STYLES[status] ?? "bg-surface-muted text-forest-950/70";
   return (
-    <span className={`badge ${style}`}>{status.replace("_", " ")}</span>
+    <span className={`badge ${style}`}>
+      <span className="badge-dot" />
+      {status.replace("_", " ")}
+    </span>
   );
 }
 
@@ -107,13 +121,20 @@ export function EmptyState({
   title,
   description,
   action,
+  icon: Icon,
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
+  icon?: ComponentType<{ size?: number; className?: string }>;
 }) {
   return (
-    <div className="card flex flex-col items-center justify-center text-center px-6 py-14 gap-2">
+    <div className="animate-in card flex flex-col items-center justify-center text-center px-6 py-16 gap-2.5">
+      {Icon && (
+        <span className="mb-1 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-forest-50 to-forest-100 text-forest-600">
+          <Icon size={24} />
+        </span>
+      )}
       <p className="font-medium text-forest-950">{title}</p>
       {description && (
         <p className="text-sm text-forest-950/60 max-w-sm">{description}</p>
@@ -164,4 +185,4 @@ export function FieldGroup({
 }
 
 export const inputClass =
-  "w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm text-forest-950 focus:outline-none focus:ring-2 focus:ring-forest-500";
+  "w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm text-forest-950 shadow-sm shadow-black/[0.02] focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500/40";
