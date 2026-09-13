@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, EmptyState, inputClass } from "@/components/ui";
+import { PageHeader, Button, EmptyState, inputClass, StatCard } from "@/components/ui";
 import StatusDropdown from "@/components/StatusDropdown";
 import { setCustomerStatus, setPipelineStage } from "@/app/actions/customers";
 import { CUSTOMER_STATUS_OPTIONS, PIPELINE_STAGE_OPTIONS } from "@/lib/statusOptions";
 import { initials } from "@/lib/format";
-import { Plus, Search, Users } from "lucide-react";
+import { Plus, Search, Users, UserCheck, Sparkles, MapPinned } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +41,10 @@ export default async function CustomersPage({
     orderBy: { createdAt: "desc" },
   });
 
+  const activeCount = customers.filter((c) => c.status === "active").length;
+  const leadCount = customers.filter((c) => c.status === "lead").length;
+  const propertyCount = customers.reduce((s, c) => s + c.properties.length, 0);
+
   return (
     <main className="p-6 md:p-8">
       <PageHeader
@@ -53,6 +57,12 @@ export default async function CustomersPage({
           </Button>
         }
       />
+
+      <div className="stagger-in grid grid-cols-3 gap-4 mb-6">
+        <StatCard icon={UserCheck} label="Active" value={String(activeCount)} tone="forest" href="/customers?status=active" />
+        <StatCard icon={Sparkles} label="Leads" value={String(leadCount)} tone="gold" href="/customers?status=lead" />
+        <StatCard icon={MapPinned} label="Properties tracked" value={String(propertyCount)} tone="ice" />
+      </div>
 
       <form className="flex flex-wrap gap-2 mb-5" method="get">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
@@ -112,14 +122,14 @@ export default async function CustomersPage({
                 return (
                   <tr
                     key={c.id}
-                    className="border-t border-border-subtle hover:bg-surface-muted/60"
+                    className="border-t border-border-subtle"
                   >
                     <td className="px-4 py-3">
                       <Link
                         href={`/customers/${c.id}`}
                         className="flex items-center gap-3 font-medium text-forest-950"
                       >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-forest-100 text-forest-700 text-xs font-semibold">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-forest-500 to-forest-700 text-white text-xs font-semibold shadow-sm">
                           {initials(c.name)}
                         </span>
                         <span>

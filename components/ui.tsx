@@ -215,5 +215,50 @@ export function SectionHeader({
   );
 }
 
+const STAT_TONES: Record<string, string> = {
+  forest: "bg-gradient-to-br from-forest-100 to-forest-100/60 text-forest-700",
+  ice: "bg-gradient-to-br from-ice-100 to-ice-100/60 text-ice-600",
+  gold: "bg-gradient-to-br from-gold-100 to-gold-100/60 text-gold-600",
+  danger: "bg-gradient-to-br from-danger-100 to-danger-100 text-danger",
+};
+
+// Small icon-chip stat card used in the summary row atop list pages
+// (Quotes, Invoices, Customers, Jobs, Calls, Pipeline) — same visual
+// language as the Dashboard's hero/secondary stats.
+export function StatCard({
+  icon: Icon,
+  label,
+  value,
+  tone = "forest",
+  href,
+}: {
+  icon: ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  value: string;
+  tone?: "forest" | "ice" | "gold" | "danger";
+  href?: string;
+}) {
+  const content = (
+    <>
+      <div className="flex items-center gap-2.5 mb-2">
+        <span className={`flex h-8 w-8 items-center justify-center rounded-lg shadow-sm ${STAT_TONES[tone]}`}>
+          <Icon size={15} />
+        </span>
+        <p className="text-[11px] font-medium text-forest-950/50 uppercase tracking-wide">{label}</p>
+      </div>
+      <p className={`text-2xl font-semibold tracking-tight ${tone === "danger" ? "text-danger" : "text-forest-950"}`}>
+        {value}
+      </p>
+    </>
+  );
+  return href ? (
+    <Link href={href} className="card card-interactive p-4 block">
+      {content}
+    </Link>
+  ) : (
+    <div className="card p-4">{content}</div>
+  );
+}
+
 export const inputClass =
   "w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm text-forest-950 shadow-sm shadow-black/[0.02] focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500/40";

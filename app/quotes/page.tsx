@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, EmptyState } from "@/components/ui";
+import { PageHeader, Button, EmptyState, StatCard } from "@/components/ui";
 import StatusDropdown from "@/components/StatusDropdown";
 import { setQuoteStatus } from "@/app/actions/quotes";
 import { QUOTE_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, Target, DollarSign, TrendingUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -54,19 +54,10 @@ export default async function QuotesPage({
         }
       />
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="card p-4">
-          <p className="text-xs text-forest-950/50 uppercase tracking-wide">Win rate</p>
-          <p className="text-xl font-semibold text-forest-950">{winRate.toFixed(0)}%</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-forest-950/50 uppercase tracking-wide">Won value</p>
-          <p className="text-xl font-semibold text-forest-950">{formatCurrency(wonValue)}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-forest-950/50 uppercase tracking-wide">Open pipeline</p>
-          <p className="text-xl font-semibold text-forest-950">{formatCurrency(openValue)}</p>
-        </div>
+      <div className="stagger-in grid grid-cols-3 gap-4 mb-6">
+        <StatCard icon={Target} label="Win rate" value={`${winRate.toFixed(0)}%`} tone="gold" />
+        <StatCard icon={DollarSign} label="Won value" value={formatCurrency(wonValue)} tone="forest" />
+        <StatCard icon={TrendingUp} label="Open pipeline" value={formatCurrency(openValue)} tone="ice" />
       </div>
 
       <div className="flex gap-1 mb-5 border-b border-border-subtle">

@@ -41,7 +41,7 @@ function Card({
         e.dataTransfer.effectAllowed = "move";
         onDragStart(customer.id);
       }}
-      className="card cursor-grab active:cursor-grabbing p-3 space-y-1.5 hover:shadow-md transition-shadow"
+      className="card card-interactive cursor-grab active:cursor-grabbing active:scale-[0.98] p-3 space-y-1.5"
     >
       <Link href={`/customers/${customer.id}`} className="font-medium text-sm text-forest-950 hover:underline">
         {customer.name}
@@ -103,12 +103,13 @@ export default function PipelineBoard({ customers }: { customers: PipelineCustom
               setDragOverStage(null);
               if (dragId) moveTo(dragId, stage.key);
             }}
-            className={`w-64 shrink-0 rounded-xl border p-2.5 transition-colors ${
+            className={`w-64 shrink-0 rounded-xl border p-2.5 pt-0 overflow-hidden transition-colors ${
               dragOverStage === stage.key
                 ? "border-forest-500 bg-forest-50"
                 : "border-border-subtle bg-surface-muted/50"
             }`}
           >
+            <div className="-mx-2.5 mb-2.5 h-1" style={{ background: stage.accent }} />
             <div className="flex items-center justify-between px-1 pb-2">
               <div className="flex items-center gap-1.5">
                 <span
@@ -119,7 +120,12 @@ export default function PipelineBoard({ customers }: { customers: PipelineCustom
                   {stage.label}
                 </p>
               </div>
-              <span className="text-xs text-forest-950/40">{stageItems.length}</span>
+              <span
+                className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-white"
+                style={{ background: stage.accent }}
+              >
+                {stageItems.length}
+              </span>
             </div>
             <div className="space-y-2 min-h-[60px]">
               {stageItems.map((c) => (

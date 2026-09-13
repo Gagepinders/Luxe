@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, StatusBadge } from "@/components/ui";
+import { PageHeader, StatusBadge, StatCard, SectionHeader } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { getPendingFollowUps } from "@/lib/callLogs";
 import { clearFollowUp } from "@/app/actions/calls";
 import CopyButton from "@/components/CopyButton";
-import { PhoneCall } from "lucide-react";
+import { PhoneCall, AlertTriangle, Clock, History } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +41,12 @@ export default async function CallsPage() {
         icon={PhoneCall}
       />
 
+      <div className="stagger-in grid grid-cols-3 gap-4">
+        <StatCard icon={AlertTriangle} label="Overdue" value={String(overdue.length)} tone={overdue.length > 0 ? "danger" : "forest"} />
+        <StatCard icon={Clock} label="Due today" value={String(dueToday.length)} tone={dueToday.length > 0 ? "gold" : "forest"} />
+        <StatCard icon={PhoneCall} label="Upcoming" value={String(upcoming.length)} tone="ice" />
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2 space-y-4">
           <FollowUpGroup title="Overdue" items={overdue} tone="danger" />
@@ -55,7 +61,7 @@ export default async function CallsPage() {
         </section>
 
         <section className="card p-5">
-          <h2 className="font-semibold text-forest-950 mb-3 text-sm">Recent calls</h2>
+          <SectionHeader title="Recent calls" icon={History} tone="ice" />
           {recentCalls.length === 0 ? (
             <p className="text-sm text-forest-950/50">No calls logged yet.</p>
           ) : (
@@ -97,10 +103,15 @@ function FollowUpGroup({
   if (items.length === 0) return null;
   const toneClass =
     tone === "danger" ? "text-danger" : tone === "warning" ? "text-warning" : "text-forest-950/70";
+  const chipClass =
+    tone === "danger" ? "bg-danger-100 text-danger" : tone === "warning" ? "bg-warning-100 text-warning" : "bg-forest-100 text-forest-700";
 
   return (
     <div className="card p-5">
-      <h2 className={`font-semibold mb-3 text-sm ${toneClass}`}>
+      <h2 className={`flex items-center gap-2.5 font-semibold mb-3 text-sm ${toneClass}`}>
+        <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${chipClass}`}>
+          <PhoneCall size={13} />
+        </span>
         {title} ({items.length})
       </h2>
       <ul className="space-y-2">

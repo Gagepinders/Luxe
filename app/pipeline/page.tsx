@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button } from "@/components/ui";
+import { PageHeader, Button, StatCard } from "@/components/ui";
 import PipelineBoard from "@/components/PipelineBoard";
-import { Plus } from "lucide-react";
+import { Plus, Users, Trophy, Target } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +37,12 @@ export default async function PipelinePage() {
           </Button>
         }
       />
+      <div className="stagger-in grid grid-cols-3 gap-4 mb-5">
+        <StatCard icon={Users} label="Total leads" value={String(customers.length)} tone="forest" />
+        <StatCard icon={Trophy} label="Won" value={String(wonCount)} tone="gold" />
+        <StatCard icon={Target} label="Win rate" value={`${winRate.toFixed(0)}%`} tone="ice" />
+      </div>
+
       <p className="text-xs text-forest-950/50 mb-4">
         Drag a card between columns to move a customer through your sales process.
       </p>

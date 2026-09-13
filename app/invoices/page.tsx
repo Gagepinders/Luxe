@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, EmptyState } from "@/components/ui";
+import { PageHeader, Button, EmptyState, StatCard } from "@/components/ui";
 import StatusDropdown from "@/components/StatusDropdown";
 import { setInvoiceStatus } from "@/app/actions/invoices";
 import { INVOICE_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { Plus, Receipt } from "lucide-react";
+import { Plus, Receipt, DollarSign, AlertTriangle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -66,21 +66,16 @@ export default async function InvoicesPage({
         }
       />
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="card p-4">
-          <p className="text-xs text-forest-950/50 uppercase tracking-wide">Outstanding</p>
-          <p className="text-xl font-semibold text-forest-950">{formatCurrency(outstanding)}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-forest-950/50 uppercase tracking-wide">Paid this month</p>
-          <p className="text-xl font-semibold text-forest-950">{formatCurrency(paidThisMonth)}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-forest-950/50 uppercase tracking-wide">Overdue</p>
-          <p className={`text-xl font-semibold ${overdueCount > 0 ? "text-danger" : "text-forest-950"}`}>
-            {overdueCount}
-          </p>
-        </div>
+      <div className="stagger-in grid grid-cols-3 gap-4 mb-6">
+        <StatCard icon={Receipt} label="Outstanding" value={formatCurrency(outstanding)} tone="gold" />
+        <StatCard icon={DollarSign} label="Paid this month" value={formatCurrency(paidThisMonth)} tone="forest" />
+        <StatCard
+          icon={AlertTriangle}
+          label="Overdue"
+          value={String(overdueCount)}
+          tone={overdueCount > 0 ? "danger" : "forest"}
+          href={overdueCount > 0 ? "/invoices?status=overdue" : undefined}
+        />
       </div>
 
       <div className="flex gap-1 mb-5 border-b border-border-subtle">

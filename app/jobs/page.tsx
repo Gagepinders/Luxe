@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Button, EmptyState } from "@/components/ui";
+import { PageHeader, Button, EmptyState, StatCard } from "@/components/ui";
 import StatusDropdown from "@/components/StatusDropdown";
 import { setJobStatus } from "@/app/actions/jobs";
 import { JOB_STATUS_OPTIONS } from "@/lib/statusOptions";
 import { formatDateShort, formatCurrency } from "@/lib/format";
-import { Plus, LayoutList, CalendarDays, CalendarClock } from "lucide-react";
+import { Plus, LayoutList, CalendarDays, CalendarClock, Sun, Loader, DollarSign } from "lucide-react";
 import {
   startOfMonth,
   endOfMonth,
@@ -32,6 +32,21 @@ export default async function JobsPage({
     orderBy: { scheduledDate: "asc" },
   });
 
+  const today = new Date();
+  const weekStart = startOfWeek(today);
+  const weekEnd = endOfWeek(today);
+  const allJobs = status
+    ? await prisma.job.findMany({ select: { status: true, scheduledDate: true, price: true } })
+    : jobs;
+  const todayCount = allJobs.filter((j) => isSameDay(new Date(j.scheduledDate), today)).length;
+  const weekRevenue = allJobs
+    .filter((j) => {
+      const d = new Date(j.scheduledDate);
+      return d >= weekStart && d <= weekEnd && j.status !== "cancelled";
+    })
+    .reduce((s, j) => s + j.price, 0);
+  const inProgressCount = allJobs.filter((j) => j.status === "in_progress").length;
+
   return (
     <main className="p-6 md:p-8">
       <PageHeader
@@ -44,6 +59,12 @@ export default async function JobsPage({
           </Button>
         }
       />
+
+      <div className="stagger-in grid grid-cols-3 gap-4 mb-6">
+        <StatCard icon={Sun} label="Scheduled today" value={String(todayCount)} tone="forest" />
+        <StatCard icon={DollarSign} label="This week's value" value={formatCurrency(weekRevenue)} tone="gold" />
+        <StatCard icon={Loader} label="In progress" value={String(inProgressCount)} tone="ice" />
+      </div>
 
       {dispatched !== undefined && (
         <div className="mb-5 rounded-lg bg-success-100 text-success px-4 py-2.5 text-sm font-medium">
